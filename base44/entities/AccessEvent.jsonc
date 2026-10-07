@@ -1,0 +1,105 @@
+{
+  "name": "AccessEvent",
+  "type": "object",
+  "properties": {
+    "condominium_id": {
+      "type": "string"
+    },
+    "pass_id": {
+      "type": "string"
+    },
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_label": {
+      "type": "string"
+    },
+    "guard_user_id": {
+      "type": "string"
+    },
+    "guard_name": {
+      "type": "string"
+    },
+    "visitor_name": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "entry",
+        "exit",
+        "denied"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "condominium_id",
+    "event_type",
+    "occurred_at"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "data.condominium_id": "{{user.data.condominium_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "condo_admin"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.condominium_id": "{{user.data.condominium_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "committee"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.condominium_id": "{{user.data.condominium_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "guard"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": false
+  }
+}

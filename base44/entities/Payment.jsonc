@@ -1,0 +1,98 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "condominium_id": {
+      "type": "string"
+    },
+    "unit_id": {
+      "type": "string"
+    },
+    "unit_label": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "transfer",
+        "card",
+        "other"
+      ],
+      "default": "cash"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "applied_to_fee_id": {
+      "type": "string"
+    },
+    "registered_by_user_id": {
+      "type": "string"
+    },
+    "registered_by_name": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "condominium_id",
+    "unit_id",
+    "amount"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "data.condominium_id": "{{user.data.condominium_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "condo_admin"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.condominium_id": "{{user.data.condominium_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "committee"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": false
+  }
+}
