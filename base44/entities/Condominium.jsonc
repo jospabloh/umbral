@@ -1,0 +1,99 @@
+{
+  "name": "Condominium",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre comercial del condominio o fraccionamiento."
+    },
+    "legal_name": {
+      "type": "string",
+      "description": "Raz\u00f3n social. Necesaria para publicar la p\u00e1gina p\u00fablica del pase."
+    },
+    "address": {
+      "type": "string",
+      "description": "Domicilio completo. Necesario para publicar la p\u00e1gina p\u00fablica del pase."
+    },
+    "privacy_contact_email": {
+      "type": "string",
+      "description": "Correo de contacto de privacidad. Necesario para publicar la p\u00e1gina p\u00fablica del pase."
+    },
+    "join_code": {
+      "type": "string",
+      "description": "C\u00f3digo de invitaci\u00f3n generado por el servidor."
+    },
+    "billing_status": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "active",
+        "view_only",
+        "suspended"
+      ],
+      "default": "trial",
+      "description": "Lo escribe \u00fanicamente Mission Control. La app lo lee para degradar la interfaz. Esta regla gobierna la escritura, no la lectura."
+    },
+    "trial_end_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Solo escritura de plataforma."
+    },
+    "legal_version": {
+      "type": "string",
+      "description": "Versi\u00f3n de t\u00e9rminos sobre la que el condominio ha decidido."
+    },
+    "legal_decision": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "legal_decided_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "legal_first_asked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "access_log_retention_days": {
+      "type": "number",
+      "default": 180
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "id": "{{user.data.condominium_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

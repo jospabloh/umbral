@@ -1,0 +1,37 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "condo_admin",
+        "committee",
+        "guard",
+        "resident",
+        "user"
+      ],
+      "default": "user"
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "condominium_id": {
+          "type": "string",
+          "description": "Solo escritura de plataforma. De este campo depende el aislamiento entre condominios; si se abre, una cuenta puede asignarse a otro condominio. Esta regla gobierna la escritura, no la lectura."
+        },
+        "unit_id": {
+          "type": "string",
+          "description": "Solo escritura de plataforma. De este campo depende el aislamiento entre condominios; si se abre, una cuenta puede asignarse a otro condominio. Esta regla gobierna la escritura, no la lectura."
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

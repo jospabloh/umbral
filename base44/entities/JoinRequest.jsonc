@@ -1,0 +1,87 @@
+{
+  "name": "JoinRequest",
+  "type": "object",
+  "properties": {
+    "condominium_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "requested_role": {
+      "type": "string",
+      "enum": [
+        "resident",
+        "committee",
+        "guard"
+      ]
+    },
+    "requested_unit_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "decided_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decided_by_user_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "condominium_id",
+    "user_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "data.condominium_id": "{{user.data.condominium_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "condo_admin"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

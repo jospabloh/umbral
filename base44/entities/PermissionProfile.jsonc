@@ -1,0 +1,61 @@
+{
+  "name": "PermissionProfile",
+  "type": "object",
+  "properties": {
+    "condominium_id": {
+      "type": "string",
+      "description": "Condominio al que aplica el perfil de permisos."
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "condo_admin",
+        "committee",
+        "guard",
+        "resident"
+      ]
+    },
+    "permission_key": {
+      "type": "string",
+      "description": "Llave 'Secci\u00f3n:acci\u00f3n' del registro de permisos."
+    },
+    "allowed": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "condominium_id",
+    "role",
+    "permission_key"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.condominium_id": "{{user.data.condominium_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

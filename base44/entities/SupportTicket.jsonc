@@ -1,0 +1,66 @@
+{
+  "name": "SupportTicket",
+  "type": "object",
+  "properties": {
+    "condominium_id": {
+      "type": "string"
+    },
+    "created_by_user_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "soporte",
+        "mejora",
+        "arco",
+        "legal"
+      ]
+    },
+    "subject": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "resolved"
+      ],
+      "default": "submitted"
+    },
+    "app": {
+      "type": "string",
+      "default": "umbral"
+    }
+  },
+  "required": [
+    "type",
+    "subject",
+    "message"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

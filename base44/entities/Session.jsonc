@@ -1,0 +1,57 @@
+{
+  "name": "Session",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Cuenta a la que pertenece la sesi\u00f3n."
+    },
+    "device_id": {
+      "type": "string",
+      "description": "Identificador del dispositivo."
+    },
+    "device_label": {
+      "type": "string",
+      "description": "Etiqueta legible del dispositivo."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "passive",
+        "revoked"
+      ],
+      "default": "active"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "device_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
