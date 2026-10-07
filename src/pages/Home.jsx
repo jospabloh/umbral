@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { Building2, ShieldCheck, LifeBuoy, Info, UserCog, ArrowRight } from "lucide-react";
+import { Building2, ShieldCheck, LifeBuoy, Info, UserCog, ArrowRight, QrCode, Wallet, Megaphone, ScanLine } from "lucide-react";
 
 export default function Home() {
   const { user } = useAuth();
@@ -28,14 +28,25 @@ export default function Home() {
     user: "Sin asignar",
   };
 
-  const quickLinks = [
-    { to: "/cuenta", label: "Mi cuenta", icon: UserCog, desc: "Perfil, miembros y dispositivos" },
-    { to: "/soporte", label: "Soporte", icon: LifeBuoy, desc: "Reporta un problema o sugiere" },
-    { to: "/acerca", label: "Acerca de", icon: Info, desc: "Manual y novedades" },
-  ];
-  if (user?.role === "condo_admin" || user?.role === "admin") {
-    quickLinks.splice(1, 0, { to: "/permisos", label: "Permisos", icon: ShieldCheck, desc: "Ajusta el acceso por rol" });
+  const quickLinks = [];
+  const r = user?.role;
+  if (r === "condo_admin" || r === "admin" || r === "committee") {
+    quickLinks.push({ to: "/unidades", label: "Unidades", icon: Building2, desc: "Viviendas y residentes" });
   }
+  quickLinks.push({ to: "/accesos", label: "Accesos", icon: QrCode, desc: "Pases QR y eventos" });
+  if (r === "condo_admin" || r === "admin" || r === "committee" || r === "resident") {
+    quickLinks.push({ to: "/cuotas", label: r === "resident" ? "Estado de cuenta" : "Cuotas y pagos", icon: Wallet, desc: r === "resident" ? "Tu saldo y movimientos" : "Cuotas, pagos y saldos" });
+  }
+  quickLinks.push({ to: "/avisos", label: "Avisos", icon: Megaphone, desc: "Comunicación del condominio" });
+  if (r === "guard" || r === "condo_admin" || r === "admin" || r === "committee") {
+    quickLinks.push({ to: "/caseta", label: "Caseta", icon: ScanLine, desc: "Verificar pases y acceso" });
+  }
+  quickLinks.push({ to: "/cuenta", label: "Mi cuenta", icon: UserCog, desc: "Perfil, miembros y dispositivos" });
+  if (r === "condo_admin" || r === "admin") {
+    quickLinks.push({ to: "/permisos", label: "Permisos", icon: ShieldCheck, desc: "Ajusta el acceso por rol" });
+  }
+  quickLinks.push({ to: "/soporte", label: "Soporte", icon: LifeBuoy, desc: "Reporta un problema o sugiere" });
+  quickLinks.push({ to: "/acerca", label: "Acerca de", icon: Info, desc: "Manual y novedades" });
 
   return (
     <div>

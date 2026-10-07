@@ -19,6 +19,12 @@ import Account from '@/pages/Account';
 import Permissions from '@/pages/Permissions';
 import Support from '@/pages/Support';
 import About from '@/pages/About';
+import Units from '@/pages/Units';
+import Access from '@/pages/Access';
+import Billing from '@/pages/Billing';
+import Notices from '@/pages/Notices';
+import GuardBooth from '@/pages/GuardBooth';
+import PublicPass from '@/pages/PublicPass';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -50,11 +56,17 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/p/:token" element={<PublicPass />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/terminos" element={<LegalAcceptance />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/unidades" element={<Units />} />
+          <Route path="/accesos" element={<Access />} />
+          <Route path="/cuotas" element={<Billing />} />
+          <Route path="/avisos" element={<Notices />} />
+          <Route path="/caseta" element={<GuardBooth />} />
           <Route path="/cuenta" element={<Account />} />
           <Route path="/permisos" element={<Permissions />} />
           <Route path="/soporte" element={<Support />} />

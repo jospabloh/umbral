@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Home, UserCog, ShieldCheck, Info, LifeBuoy, Building2 } from "lucide-react";
+import { Home, UserCog, ShieldCheck, Info, LifeBuoy, Building2, QrCode, Wallet, Megaphone, ScanLine } from "lucide-react";
 
 const SCROLL_KEY = "umbral-sidebar-scroll";
 
 function navItems(role) {
   const items = [
     { to: "/", label: "Inicio", icon: Home, end: true, roles: ["admin", "condo_admin", "committee", "guard", "resident"] },
+    { to: "/unidades", label: "Unidades", icon: Building2, roles: ["admin", "condo_admin", "committee"] },
+    { to: "/accesos", label: "Accesos", icon: QrCode, roles: ["admin", "condo_admin", "committee", "guard", "resident"] },
+    { to: "/cuotas", label: "Cuotas", icon: Wallet, roles: ["admin", "condo_admin", "committee", "resident"] },
+    { to: "/avisos", label: "Avisos", icon: Megaphone, roles: ["admin", "condo_admin", "committee", "guard", "resident"] },
+    { to: "/caseta", label: "Caseta", icon: ScanLine, roles: ["admin", "condo_admin", "committee", "guard"] },
     { to: "/cuenta", label: "Cuenta", icon: UserCog, roles: ["admin", "condo_admin", "committee", "guard", "resident"] },
     { to: "/permisos", label: "Permisos", icon: ShieldCheck, roles: ["admin", "condo_admin"] },
     { to: "/soporte", label: "Soporte", icon: LifeBuoy, roles: ["admin", "condo_admin", "committee", "guard", "resident"] },
