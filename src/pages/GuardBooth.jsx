@@ -23,7 +23,7 @@ export default function GuardBooth() {
   const loadEvents = () => {
     setLoadingEvents(true);
     base44.functions.invoke("access", { action: "listEvents" })
-      .then((res) => setEvents((res.items || []).slice(0, 15)))
+      .then((res) => setEvents((res.data?.items || []).slice(0, 15)))
       .catch(() => {})
       .finally(() => setLoadingEvents(false));
   };
@@ -39,7 +39,7 @@ export default function GuardBooth() {
       // Accept full URL or bare token
       const bare = t.includes("/p/") ? t.split("/p/").pop() : t;
       const res = await base44.functions.invoke("access", { action: "verifyPass", token: bare });
-      setResult(res);
+      setResult(res.data);
     } catch (e) {
       setResult({ error: e.message || "Pase no válido" });
     } finally {

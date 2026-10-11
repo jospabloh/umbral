@@ -1,0 +1,56 @@
+<mjml>
+  <mj-head>
+    <mj-title>Tu factura {{invoice_number}} está lista</mj-title>
+    <mj-preview>Emitimos el CFDI de tu pago de mantenimiento.</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Arial, Helvetica, sans-serif" />
+      <mj-text color="#000000" font-size="15px" line-height="1.6" />
+      <mj-section background-color="#ffffff" padding="0 36px" />
+      <mj-button background-color="#000000" color="#ffffff" border-radius="4px" inner-padding="12px 24px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f6f7f9">
+    <mj-section background-color="#111111" padding="24px 36px">
+      <mj-column>
+        <mj-image src="https://media.base44.com/images/public/6ac6b6d5aaf0d858dd14a690/cc59bd650_logo.png" alt="Umbral" width="120px" align="left" />
+        <mj-text color="#ffffff" font-size="20px" font-weight="bold" padding="12px 0 0 0">Umbral</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="36px 36px 12px">
+      <mj-column>
+        <mj-text font-size="26px" font-weight="bold" line-height="1.2">Tu factura está lista</mj-text>
+        <mj-text color="#6b7280" padding="8px 0 0 0">Emitimos el comprobante fiscal de tu pago de mantenimiento.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="8px 36px 24px">
+      <mj-column background-color="#ffffff" border="1px solid #e5e7eb" border-radius="4px" padding="24px">
+        <mj-text font-size="13px" color="#6b7280" padding="0 0 4px 0">Folio fiscal</mj-text>
+        <mj-text font-size="18px" font-weight="bold" padding="0 0 16px 0">{{invoice_number}}</mj-text>
+
+        <mj-text font-size="13px" color="#6b7280" padding="0 0 4px 0">Condominio</mj-text>
+        <mj-text padding="0 0 16px 0">{{condominium_name}}</mj-text>
+
+        <mj-text font-size="13px" color="#6b7280" padding="0 0 4px 0">Unidad</mj-text>
+        <mj-text padding="0 0 16px 0">{{unit_label}}</mj-text>
+
+        <mj-text font-size="13px" color="#6b7280" padding="0 0 4px 0">Monto</mj-text>
+        <mj-text font-size="18px" font-weight="bold" padding="0">{{amount}}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="0 36px 36px">
+      <mj-column>
+        <mj-text color="#6b7280" font-size="14px">El archivo del CFDI va adjunto a este correo. Si necesitas una corrección, responde a la administración de tu condominio.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f6f7f9" padding="20px 36px 32px">
+      <mj-column>
+        <mj-divider border-color="#e5e7eb" />
+        <mj-text color="#6b7280" font-size="12px">Umbral · Administración de condominios</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

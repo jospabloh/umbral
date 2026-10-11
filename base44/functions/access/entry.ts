@@ -12,10 +12,7 @@ export default async function (req) {
     if (action === "verifyPass") {
       const token = (body.token || "").trim();
       if (!token) return Response.json({ error: "Token requerido." }, { status: 400 });
-      const res = await base44.asServiceRole.entities.AccessPass.filter(
-        { qr_token: token },
-        { limit: 1 }
-      );
+      const res = await base44.asServiceRole.entities.AccessPass.filter({ qr_token: token }, { limit: 1 });
       const passes = asPage(res);
       if (passes.length === 0) {
         return Response.json({ error: "Pase no encontrado." }, { status: 404 });
@@ -24,30 +21,30 @@ export default async function (req) {
       let condo = null;
       let unit = null;
       try {
-        condo = await base44.asServiceRole.entities.Condominium.get(pass.data.condominium_id);
+        condo = await base44.asServiceRole.entities.Condominium.get(pass.condominium_id);
       } catch (e) {}
-      if (pass.data.unit_id) {
+      if (pass.unit_id) {
         try {
-          unit = await base44.asServiceRole.entities.Unit.get(pass.data.unit_id);
+          unit = await base44.asServiceRole.entities.Unit.get(pass.unit_id);
         } catch (e) {}
       }
       const now = Date.now();
-      const validFrom = pass.data.valid_from ? new Date(pass.data.valid_from).getTime() : 0;
-      const validUntil = pass.data.valid_until ? new Date(pass.data.valid_until).getTime() : Infinity;
-      const isValid = pass.data.status === "active" && now >= validFrom && now <= validUntil;
+      const validFrom = pass.valid_from ? new Date(pass.valid_from).getTime() : 0;
+      const validUntil = pass.valid_until ? new Date(pass.valid_until).getTime() : Infinity;
+      const isValid = pass.status === "active" && now >= validFrom && now <= validUntil;
       return Response.json({
         pass: {
           id: pass.id,
-          visitor_name: pass.data.visitor_name,
-          visitor_phone: pass.data.visitor_phone,
-          pass_type: pass.data.pass_type,
-          valid_from: pass.data.valid_from,
-          valid_until: pass.data.valid_until,
-          status: pass.data.status,
-          note: pass.data.note,
+          visitor_name: pass.visitor_name,
+          visitor_phone: pass.visitor_phone,
+          pass_type: pass.pass_type,
+          valid_from: pass.valid_from,
+          valid_until: pass.valid_until,
+          status: pass.status,
+          note: pass.note,
         },
-        unit: unit ? { id: unit.id, internal_id: unit.data.internal_id, label: unit.data.label } : null,
-        condominium: condo ? { name: condo.data.name, address: condo.data.address } : null,
+        unit: unit ? { id: unit.id, internal_id: unit.internal_id, label: unit.label } : null,
+        condominium: condo ? { name: condo.name, address: condo.address } : null,
         valid: isValid,
       });
     }
@@ -96,25 +93,23 @@ export default async function (req) {
       if (unitId) {
         try {
           const u = await base44.asServiceRole.entities.Unit.get(unitId);
-          if (u && u.data.condominium_id === condominiumId) unitLabel = u.data.internal_id;
+          if (u && u.condominium_id === condominiumId) unitLabel = u.internal_id;
         } catch (e) {}
       }
       const qr_token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
       const pass = await base44.asServiceRole.entities.AccessPass.create({
-        data: {
-          condominium_id: condominiumId,
-          unit_id: unitId,
-          unit_label: unitLabel,
-          created_by_user_id: caller.id,
-          visitor_name,
-          visitor_phone: (body.visitor_phone || "").trim() || null,
-          pass_type: body.pass_type || "single",
-          valid_from: validFrom.toISOString(),
-          valid_until: validUntil.toISOString(),
-          status: "active",
-          qr_token,
-          note: (body.note || "").trim() || null,
-        },
+        condominium_id: condominiumId,
+        unit_id: unitId,
+        unit_label: unitLabel,
+        created_by_user_id: caller.id,
+        visitor_name,
+        visitor_phone: (body.visitor_phone || "").trim() || null,
+        pass_type: body.pass_type || "single",
+        valid_from: validFrom.toISOString(),
+        valid_until: validUntil.toISOString(),
+        status: "active",
+        qr_token,
+        note: (body.note || "").trim() || null,
       });
       return Response.json({ pass });
     }
@@ -127,15 +122,13 @@ export default async function (req) {
       const blocked = guardBilling(condominium);
       if (blocked) return Response.json({ error: blocked.error }, { status: blocked.status });
       const pass = await base44.asServiceRole.entities.AccessPass.get(body.pass_id);
-      if (!pass || pass.data.condominium_id !== condominiumId) {
+      if (!pass || pass.condominium_id !== condominiumId) {
         return Response.json({ error: "Pase no encontrado." }, { status: 404 });
       }
-      if (!allowed && pass.data.created_by_user_id !== caller.id) {
+      if (!allowed && pass.created_by_user_id !== caller.id) {
         return Response.json({ error: "Solo puedes revocar tus propios pases." }, { status: 403 });
       }
-      await base44.asServiceRole.entities.AccessPass.update(body.pass_id, {
-        data: { ...pass.data, status: "revoked" },
-      });
+      await base44.asServiceRole.entities.AccessPass.update(body.pass_id, { ...pass, status: "revoked" });
       return Response.json({ ok: true });
     }
 
@@ -164,31 +157,27 @@ export default async function (req) {
       if (body.unit_id) {
         try {
           const u = await base44.asServiceRole.entities.Unit.get(body.unit_id);
-          if (u) unitLabel = u.data.internal_id;
+          if (u) unitLabel = u.internal_id;
         } catch (e) {}
       }
       const event = await base44.asServiceRole.entities.AccessEvent.create({
-        data: {
-          condominium_id: condominiumId,
-          pass_id: body.pass_id || null,
-          unit_id: body.unit_id || null,
-          unit_label: unitLabel,
-          guard_user_id: caller.id,
-          guard_name: stored.data?.full_name || caller.email,
-          visitor_name: (body.visitor_name || "").trim() || null,
-          event_type,
-          occurred_at: body.occurred_at || now,
-          note: (body.note || "").trim() || null,
-        },
+        condominium_id: condominiumId,
+        pass_id: body.pass_id || null,
+        unit_id: body.unit_id || null,
+        unit_label: unitLabel,
+        guard_user_id: caller.id,
+        guard_name: stored.data?.full_name || caller.email,
+        visitor_name: (body.visitor_name || "").trim() || null,
+        event_type,
+        occurred_at: body.occurred_at || now,
+        note: (body.note || "").trim() || null,
       });
       // Mark single-use passes as used after an entry.
       if (event_type === "entry" && body.pass_id) {
         try {
           const pass = await base44.asServiceRole.entities.AccessPass.get(body.pass_id);
-          if (pass && pass.data.pass_type === "single" && pass.data.status === "active") {
-            await base44.asServiceRole.entities.AccessPass.update(body.pass_id, {
-              data: { ...pass.data, status: "used" },
-            });
+          if (pass && pass.pass_type === "single" && pass.status === "active") {
+            await base44.asServiceRole.entities.AccessPass.update(body.pass_id, { ...pass, status: "used" });
           }
         } catch (e) {}
       }

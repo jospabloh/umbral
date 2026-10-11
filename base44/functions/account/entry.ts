@@ -11,6 +11,24 @@ export default async function (req) {
     if (!ctx.ok) return Response.json({ error: ctx.error }, { status: ctx.status });
     const { caller, stored, condominium, condominiumId } = ctx;
 
+    // ---- condominium ----
+    if (action === "getCondominium") {
+      if (!condominium) return Response.json({ condominium: null });
+      return Response.json({
+        condominium: {
+          id: condominium.id,
+          name: condominium.name,
+          legal_name: condominium.legal_name,
+          address: condominium.address,
+          privacy_contact_email: condominium.privacy_contact_email,
+          billing_status: condominium.billing_status,
+          trial_end_at: condominium.trial_end_at,
+          join_code: condominium.join_code,
+          access_log_retention_days: condominium.access_log_retention_days,
+        },
+      });
+    }
+
     // ---- profile ----
     if (action === "updateProfile") {
       const data = { ...(stored.data || {}) };
@@ -36,7 +54,21 @@ export default async function (req) {
         phone: u.data?.phone || "",
         unit_id: u.data?.unit_id || null,
       }));
-      return Response.json({ members, condominium: condominium ? { name: condominium.data.name, legal_name: condominium.data.legal_name, address: condominium.data.address, privacy_contact_email: condominium.data.privacy_contact_email, billing_status: condominium.data.billing_status, trial_end_at: condominium.data.trial_end_at, join_code: condominium.data.join_code, access_log_retention_days: condominium.data.access_log_retention_days } : null });
+      return Response.json({
+        members,
+        condominium: condominium
+          ? {
+              name: condominium.name,
+              legal_name: condominium.legal_name,
+              address: condominium.address,
+              privacy_contact_email: condominium.privacy_contact_email,
+              billing_status: condominium.billing_status,
+              trial_end_at: condominium.trial_end_at,
+              join_code: condominium.join_code,
+              access_log_retention_days: condominium.access_log_retention_days,
+            }
+          : null,
+      });
     }
 
     if (action === "listPending") {
@@ -48,7 +80,15 @@ export default async function (req) {
         { condominium_id: condominiumId, status: "pending" },
         { sort: "-created_date", limit: 100 }
       );
-      return Response.json({ requests: asPage(res).map((r) => ({ id: r.id, user_email: r.data.user_email, user_name: r.data.user_name, requested_role: r.data.requested_role, requested_unit_id: r.data.requested_unit_id })) });
+      return Response.json({
+        requests: asPage(res).map((r) => ({
+          id: r.id,
+          user_email: r.user_email,
+          user_name: r.user_name,
+          requested_role: r.requested_role,
+          requested_unit_id: r.requested_unit_id,
+        })),
+      });
     }
 
     if (action === "changeRole") {
@@ -71,8 +111,7 @@ export default async function (req) {
           { "data.condominium_id": condominiumId, role: "condo_admin" },
           { limit: 100 }
         );
-        const admins = asPage(res);
-        if (admins.length <= 1) {
+        if (asPage(res).length <= 1) {
           return Response.json({ error: "No puedes dejar el condominio sin administrador." }, { status: 400 });
         }
       }
@@ -123,15 +162,13 @@ export default async function (req) {
 
     if (action === "requestDeletion") {
       await base44.asServiceRole.entities.SupportTicket.create({
-        data: {
-          condominium_id: condominiumId,
-          created_by_user_id: caller.id,
-          type: "arco",
-          subject: "Solicitud de borrado del condominio",
-          message: body.reason || "Sin motivo adicional.",
-          status: "submitted",
-          app: "umbral",
-        },
+        condominium_id: condominiumId,
+        created_by_user_id: caller.id,
+        type: "arco",
+        subject: "Solicitud de borrado del condominio",
+        message: body.reason || "Sin motivo adicional.",
+        status: "submitted",
+        app: "umbral",
       });
       return Response.json({ ok: true });
     }
@@ -140,27 +177,40 @@ export default async function (req) {
     if (action === "listSessions") {
       const res = await base44.asServiceRole.entities.Session.filter(
         { user_id: caller.id },
-        { sort: "-data.last_seen", limit: 50 }
+        { sort: "-last_seen", limit: 50 }
       );
-      return Response.json({ sessions: asPage(res).map((s) => ({ id: s.id, device_id: s.data.device_id, device_label: s.data.device_label, status: s.data.status, last_seen: s.data.last_seen })) });
+      return Response.json({
+        sessions: asPage(res).map((s) => ({
+          id: s.id,
+          device_id: s.device_id,
+          device_label: s.device_label,
+          status: s.status,
+          last_seen: s.last_seen,
+        })),
+      });
     }
 
     if (action === "revokeSession") {
       const sessionId = body.session_id;
       const session = await base44.asServiceRole.entities.Session.get(sessionId);
-      if (!session || session.data.user_id !== caller.id) {
+      if (!session || session.user_id !== caller.id) {
         return Response.json({ error: "Sesión no encontrada." }, { status: 404 });
       }
-      await base44.asServiceRole.entities.Session.update(sessionId, {
-        data: { ...session.data, status: "revoked" },
-      });
+      await base44.asServiceRole.entities.Session.update(sessionId, { ...session, status: "revoked" });
       return Response.json({ ok: true });
     }
 
     // ---- export ----
     if (action === "exportData") {
       return Response.json({
-        condominium: condominium ? { name: condominium.data.name, legal_name: condominium.data.legal_name, address: condominium.data.address, billing_status: condominium.data.billing_status } : null,
+        condominium: condominium
+          ? {
+              name: condominium.name,
+              legal_name: condominium.legal_name,
+              address: condominium.address,
+              billing_status: condominium.billing_status,
+            }
+          : null,
         account: { email: caller.email, role: stored.role, full_name: stored.data?.full_name },
         exported_at: new Date().toISOString(),
       });

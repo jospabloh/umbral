@@ -1,0 +1,94 @@
+{
+  "name": "StaffMember",
+  "type": "object",
+  "properties": {
+    "condominium_id": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "position": {
+      "type": "string",
+      "description": "Puesto, ej. Vigilante, Jardinero."
+    },
+    "department": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "hire_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "condominium_id",
+    "full_name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            {
+              "data.condominium_id": "{{user.data.condominium_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "condo_admin"
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.condominium_id": "{{user.data.condominium_id}}"
+            },
+            {
+              "user_condition": {
+                "role": "committee"
+              }
+            }
+          ]
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

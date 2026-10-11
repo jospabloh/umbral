@@ -25,7 +25,7 @@ export default function Units() {
   const load = () => {
     setLoading(true);
     base44.functions.invoke("units", { action: "list" })
-      .then((res) => setUnits(res.items || []))
+      .then((res) => setUnits(res.data?.items || []))
       .catch(() => toast({ variant: "destructive", title: "Error al cargar unidades" }))
       .finally(() => setLoading(false));
   };

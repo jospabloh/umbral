@@ -40,12 +40,12 @@ export default function Access() {
   const load = () => {
     setLoading(true);
     base44.functions.invoke("access", { action: "listPasses" })
-      .then((res) => setPasses(res.items || []))
+      .then((res) => setPasses(res.data?.items || []))
       .catch(() => {})
       .finally(() => setLoading(false));
     if (canViewAll) {
       base44.functions.invoke("access", { action: "listEvents" })
-        .then((res) => setEvents(res.items || []))
+        .then((res) => setEvents(res.data?.items || []))
         .catch(() => {});
     }
   };
@@ -67,7 +67,7 @@ export default function Access() {
       toast({ title: "Pase creado" });
       setDialogOpen(false);
       setForm({ visitor_name: "", visitor_phone: "", pass_type: "single", valid_until: "", note: "" });
-      setQrPass(res.pass);
+      setQrPass(res.data?.pass || null);
       load();
     } catch (e) {
       toast({ variant: "destructive", title: "Error", description: e.message });

@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { resolveCaller, guardBilling } from "../../shared/auth.ts";
+import { resolveCaller } from "../../shared/auth.ts";
 import { fetchLegalVersion } from "../../shared/legalVersion.ts";
 
 export default async function (req) {
@@ -32,17 +32,18 @@ export default async function (req) {
       const joinCode = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
 
       const condo = await base44.asServiceRole.entities.Condominium.create({
-        data: {
-          name, legal_name, address, privacy_contact_email,
-          join_code: joinCode,
-          billing_status: "trial",
-          trial_end_at: trialEnd,
-          legal_version: version.version,
-          legal_decision: "accepted",
-          legal_decided_at: now,
-          legal_first_asked_at: now,
-          access_log_retention_days: 180,
-        },
+        name,
+        legal_name,
+        address,
+        privacy_contact_email,
+        join_code: joinCode,
+        billing_status: "trial",
+        trial_end_at: trialEnd,
+        legal_version: version.version,
+        legal_decision: "accepted",
+        legal_decided_at: now,
+        legal_first_asked_at: now,
+        access_log_retention_days: 180,
       });
 
       await base44.asServiceRole.entities.User.update(caller.id, {
@@ -51,16 +52,14 @@ export default async function (req) {
       });
 
       await base44.asServiceRole.entities.LegalAcceptance.create({
-        data: {
-          condominium_id: condo.id,
-          version: version.version,
-          terms_sha256: version.terms_sha256 || "",
-          decision: "accepted",
-          decided_at: now,
-          decided_by_user_id: caller.id,
-          decided_by_name: stored.data?.full_name || "",
-          decided_by_email: caller.email,
-        },
+        condominium_id: condo.id,
+        version: version.version,
+        terms_sha256: version.terms_sha256 || "",
+        decision: "accepted",
+        decided_at: now,
+        decided_by_user_id: caller.id,
+        decided_by_name: stored.data?.full_name || "",
+        decided_by_email: caller.email,
       });
 
       return Response.json({ condominium: condo, join_code: joinCode });
@@ -76,10 +75,7 @@ export default async function (req) {
       const code = (body.join_code || "").trim().toUpperCase();
       if (!code) return Response.json({ error: "Código requerido." }, { status: 400 });
 
-      const res = await base44.asServiceRole.entities.Condominium.filter(
-        { join_code: code },
-        { limit: 1 }
-      );
+      const res = await base44.asServiceRole.entities.Condominium.filter({ join_code: code }, { limit: 1 });
       const condos = Array.isArray(res) ? res : res?.items || [];
       if (condos.length === 0) {
         return Response.json({ error: "Código de invitación no válido." }, { status: 404 });
@@ -87,17 +83,15 @@ export default async function (req) {
       const condo = condos[0];
 
       await base44.asServiceRole.entities.JoinRequest.create({
-        data: {
-          condominium_id: condo.id,
-          user_id: caller.id,
-          user_email: caller.email,
-          user_name: stored.data?.full_name || "",
-          requested_role: body.requested_role || "resident",
-          requested_unit_id: body.requested_unit_id || null,
-          status: "pending",
-        },
+        condominium_id: condo.id,
+        user_id: caller.id,
+        user_email: caller.email,
+        user_name: stored.data?.full_name || "",
+        requested_role: body.requested_role || "resident",
+        requested_unit_id: body.requested_unit_id || null,
+        status: "pending",
       });
-      return Response.json({ status: "pending", condominium_name: condo.data.name });
+      return Response.json({ status: "pending", condominium_name: condo.name });
     }
 
     if (action === "approveMember") {
@@ -110,24 +104,27 @@ export default async function (req) {
       const requestId = body.request_id;
       if (!requestId) return Response.json({ error: "Solicitud requerida." }, { status: 400 });
       const jr = await base44.asServiceRole.entities.JoinRequest.get(requestId);
-      if (!jr || jr.data.condominium_id !== condominiumId) {
+      if (!jr || jr.condominium_id !== condominiumId) {
         return Response.json({ error: "Solicitud no encontrada." }, { status: 404 });
       }
-      const targetUser = await base44.asServiceRole.entities.User.get(jr.data.user_id);
+      const targetUser = await base44.asServiceRole.entities.User.get(jr.user_id);
       if (!targetUser) return Response.json({ error: "Cuenta no encontrada." }, { status: 404 });
       if (targetUser.data?.condominium_id) {
         return Response.json({ error: "Esa cuenta ya pertenece a otro condominio." }, { status: 409 });
       }
-      const newRole = body.role || jr.data.requested_role || "resident";
+      const newRole = body.role || jr.requested_role || "resident";
       if (newRole === "admin") {
         return Response.json({ error: "No se puede asignar ese rol." }, { status: 400 });
       }
       await base44.asServiceRole.entities.User.update(targetUser.id, {
         role: newRole,
-        data: { ...(targetUser.data || {}), condominium_id: condominiumId, unit_id: body.unit_id || jr.data.requested_unit_id || null },
+        data: { ...(targetUser.data || {}), condominium_id: condominiumId, unit_id: body.unit_id || jr.requested_unit_id || null },
       });
       await base44.asServiceRole.entities.JoinRequest.update(requestId, {
-        data: { ...jr.data, status: "approved", decided_at: new Date().toISOString(), decided_by_user_id: stored.id },
+        ...jr,
+        status: "approved",
+        decided_at: new Date().toISOString(),
+        decided_by_user_id: stored.id,
       });
       return Response.json({ ok: true });
     }
@@ -140,11 +137,14 @@ export default async function (req) {
         return Response.json({ error: "Solo el administrador del condominio puede rechazar miembros." }, { status: 403 });
       }
       const jr = await base44.asServiceRole.entities.JoinRequest.get(body.request_id);
-      if (!jr || jr.data.condominium_id !== condominiumId) {
+      if (!jr || jr.condominium_id !== condominiumId) {
         return Response.json({ error: "Solicitud no encontrada." }, { status: 404 });
       }
       await base44.asServiceRole.entities.JoinRequest.update(body.request_id, {
-        data: { ...jr.data, status: "rejected", decided_at: new Date().toISOString(), decided_by_user_id: stored.id },
+        ...jr,
+        status: "rejected",
+        decided_at: new Date().toISOString(),
+        decided_by_user_id: stored.id,
       });
       return Response.json({ ok: true });
     }

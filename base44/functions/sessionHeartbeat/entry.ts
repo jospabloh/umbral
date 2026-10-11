@@ -19,7 +19,7 @@ export default async function (req) {
     );
     const existing = asPage(res);
 
-    if (existing.length > 0 && existing[0].data.status === "revoked") {
+    if (existing.length > 0 && existing[0].status === "revoked") {
       return Response.json({ error: "Sesión revocada." }, { status: 403 });
     }
 
@@ -32,18 +32,23 @@ export default async function (req) {
     );
     for (const s of asPage(allRes)) {
       if (existing.length > 0 && s.id === existing[0].id) continue;
-      await base44.asServiceRole.entities.Session.update(s.id, {
-        data: { ...s.data, status: "passive" },
-      });
+      await base44.asServiceRole.entities.Session.update(s.id, { ...s, status: "passive" });
     }
 
     if (existing.length > 0) {
       await base44.asServiceRole.entities.Session.update(existing[0].id, {
-        data: { ...existing[0].data, status: "active", device_label: deviceLabel, last_seen: now },
+        ...existing[0],
+        status: "active",
+        device_label: deviceLabel,
+        last_seen: now,
       });
     } else {
       await base44.asServiceRole.entities.Session.create({
-        data: { user_id: caller.id, device_id: deviceId, device_label: deviceLabel, status: "active", last_seen: now },
+        user_id: caller.id,
+        device_id: deviceId,
+        device_label: deviceLabel,
+        status: "active",
+        last_seen: now,
       });
     }
 

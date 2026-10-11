@@ -25,6 +25,9 @@ import Billing from '@/pages/Billing';
 import Notices from '@/pages/Notices';
 import GuardBooth from '@/pages/GuardBooth';
 import PublicPass from '@/pages/PublicPass';
+import Panel from '@/pages/Panel';
+import Suppliers from '@/pages/Suppliers';
+import Staff from '@/pages/Staff';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -62,6 +65,9 @@ const AuthenticatedApp = () => {
         <Route path="/terminos" element={<LegalAcceptance />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/panel" element={<Panel />} />
+          <Route path="/proveedores" element={<Suppliers />} />
+          <Route path="/personal" element={<Staff />} />
           <Route path="/unidades" element={<Units />} />
           <Route path="/accesos" element={<Access />} />
           <Route path="/cuotas" element={<Billing />} />

@@ -22,7 +22,7 @@ export default async function (req) {
           { limit: 500 }
         );
         for (const p of asPage(res)) {
-          overrides[`${p.data.role}:${p.data.permission_key}`] = p.data.allowed === true;
+          overrides[`${p.role}:${p.permission_key}`] = p.allowed === true;
         }
       }
       return Response.json({ defaults: PERMISSION_DEFAULTS, overrides });
@@ -50,11 +50,15 @@ export default async function (req) {
       const existing = asPage(res);
       if (existing.length > 0) {
         await base44.asServiceRole.entities.PermissionProfile.update(existing[0].id, {
-          data: { ...existing[0].data, allowed },
+          ...existing[0],
+          allowed,
         });
       } else {
         await base44.asServiceRole.entities.PermissionProfile.create({
-          data: { condominium_id: condominiumId, role, permission_key, allowed },
+          condominium_id: condominiumId,
+          role,
+          permission_key,
+          allowed,
         });
       }
       return Response.json({ ok: true });

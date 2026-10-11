@@ -21,8 +21,9 @@ export default function PublicPass() {
   useEffect(() => {
     base44.functions.invoke("access", { action: "verifyPass", token })
       .then((res) => {
-        if (res.error) setError(res.error);
-        else setData(res);
+        const d = res.data;
+        if (d?.error) setError(d.error);
+        else setData(d);
       })
       .catch((e) => setError(e.message || "Pase no encontrado"))
       .finally(() => setLoading(false));

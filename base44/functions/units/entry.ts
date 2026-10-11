@@ -34,15 +34,13 @@ export default async function (req) {
       const internal_id = (body.internal_id || "").trim();
       if (!internal_id) return Response.json({ error: "Identificador requerido." }, { status: 400 });
       const unit = await base44.asServiceRole.entities.Unit.create({
-        data: {
-          condominium_id: condominiumId,
-          internal_id,
-          label: (body.label || "").trim() || internal_id,
-          resident_user_id: body.resident_user_id || null,
-          resident_name: (body.resident_name || "").trim() || null,
-          type: body.type || "casa",
-          status: body.resident_user_id ? "active" : "vacant",
-        },
+        condominium_id: condominiumId,
+        internal_id,
+        label: (body.label || "").trim() || internal_id,
+        resident_user_id: body.resident_user_id || null,
+        resident_name: (body.resident_name || "").trim() || null,
+        type: body.type || "casa",
+        status: body.resident_user_id ? "active" : "vacant",
       });
       return Response.json({ unit });
     }
@@ -57,7 +55,7 @@ export default async function (req) {
       const blocked = guardBilling(condominium);
       if (blocked) return Response.json({ error: blocked.error }, { status: blocked.status });
       const unit = await base44.asServiceRole.entities.Unit.get(body.unit_id);
-      if (!unit || unit.data.condominium_id !== condominiumId) {
+      if (!unit || unit.condominium_id !== condominiumId) {
         return Response.json({ error: "Unidad no encontrada." }, { status: 404 });
       }
       const updates = {};
@@ -69,9 +67,7 @@ export default async function (req) {
         updates.resident_name = (body.resident_name || "").trim() || null;
         updates.status = body.resident_user_id ? "active" : "vacant";
       }
-      await base44.asServiceRole.entities.Unit.update(body.unit_id, {
-        data: { ...unit.data, ...updates },
-      });
+      await base44.asServiceRole.entities.Unit.update(body.unit_id, { ...unit, ...updates });
       return Response.json({ ok: true });
     }
 
@@ -85,7 +81,7 @@ export default async function (req) {
       const blocked = guardBilling(condominium);
       if (blocked) return Response.json({ error: blocked.error }, { status: blocked.status });
       const unit = await base44.asServiceRole.entities.Unit.get(body.unit_id);
-      if (!unit || unit.data.condominium_id !== condominiumId) {
+      if (!unit || unit.condominium_id !== condominiumId) {
         return Response.json({ error: "Unidad no encontrada." }, { status: 404 });
       }
       await base44.asServiceRole.entities.Unit.delete(body.unit_id);

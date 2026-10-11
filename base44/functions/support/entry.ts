@@ -10,7 +10,7 @@ export default async function (req) {
 
     const ctx = await resolveCaller(base44);
     if (!ctx.ok) return Response.json({ error: ctx.error }, { status: ctx.status });
-    const { caller, stored, condominiumId } = ctx;
+    const { caller, condominiumId } = ctx;
 
     const type = body.type;
     if (!type || !["soporte", "mejora", "arco", "legal"].includes(type)) {
@@ -23,15 +23,13 @@ export default async function (req) {
     }
 
     await base44.asServiceRole.entities.SupportTicket.create({
-      data: {
-        condominium_id: condominiumId,
-        created_by_user_id: caller.id,
-        type,
-        subject,
-        message,
-        status: "submitted",
-        app: "umbral",
-      },
+      condominium_id: condominiumId,
+      created_by_user_id: caller.id,
+      type,
+      subject,
+      message,
+      status: "submitted",
+      app: "umbral",
     });
     return Response.json({ ok: true });
   } catch (error) {

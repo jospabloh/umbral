@@ -14,6 +14,8 @@ export default async function (req) {
     if (!condominiumId) return Response.json({ error: "Sin condominio." }, { status: 400 });
 
     if (action === "listNotices") {
+      const allowed = await hasPermission(base44, stored, condominiumId, "Avisos:ver");
+      if (!allowed) return Response.json({ error: "Sin permiso." }, { status: 403 });
       const res = await base44.asServiceRole.entities.Notice.filter(
         { condominium_id: condominiumId, status: "published" },
         { sort: "-published_at", limit: 100 }
@@ -30,17 +32,15 @@ export default async function (req) {
       const text = (body.body || "").trim();
       if (!title || !text) return Response.json({ error: "Título y mensaje requeridos." }, { status: 400 });
       const notice = await base44.asServiceRole.entities.Notice.create({
-        data: {
-          condominium_id: condominiumId,
-          created_by_user_id: caller.id,
-          created_by_name: stored.data?.full_name || caller.email,
-          title,
-          body: text,
-          type: body.type || "info",
-          pinned: !!body.pinned,
-          status: "published",
-          published_at: new Date().toISOString(),
-        },
+        condominium_id: condominiumId,
+        created_by_user_id: caller.id,
+        created_by_name: stored.data?.full_name || caller.email,
+        title,
+        body: text,
+        type: body.type || "info",
+        pinned: !!body.pinned,
+        status: "published",
+        published_at: new Date().toISOString(),
       });
       return Response.json({ notice });
     }
@@ -51,12 +51,10 @@ export default async function (req) {
       const blocked = guardBilling(condominium);
       if (blocked) return Response.json({ error: blocked.error }, { status: blocked.status });
       const notice = await base44.asServiceRole.entities.Notice.get(body.notice_id);
-      if (!notice || notice.data.condominium_id !== condominiumId) {
+      if (!notice || notice.condominium_id !== condominiumId) {
         return Response.json({ error: "Aviso no encontrado." }, { status: 404 });
       }
-      await base44.asServiceRole.entities.Notice.update(body.notice_id, {
-        data: { ...notice.data, status: "archived" },
-      });
+      await base44.asServiceRole.entities.Notice.update(body.notice_id, { ...notice, status: "archived" });
       return Response.json({ ok: true });
     }
 

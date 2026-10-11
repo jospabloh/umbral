@@ -35,6 +35,14 @@ export const PERMISSION_DEFAULTS = {
   "Miembros:ver": { condo_admin: true, committee: false, guard: false, resident: false },
   "Miembros:modificar": { condo_admin: true, committee: false, guard: false, resident: false },
   "Permisos:modificar": { condo_admin: true, committee: false, guard: false, resident: false },
+  "Proveedores:ver": { condo_admin: true, committee: true, guard: false, resident: false },
+  "Proveedores:crear": { condo_admin: true, committee: false, guard: false, resident: false },
+  "Proveedores:modificar": { condo_admin: true, committee: false, guard: false, resident: false },
+  "Proveedores:eliminar": { condo_admin: true, committee: false, guard: false, resident: false },
+  "Personal:ver": { condo_admin: true, committee: true, guard: false, resident: false },
+  "Personal:crear": { condo_admin: true, committee: false, guard: false, resident: false },
+  "Personal:modificar": { condo_admin: true, committee: false, guard: false, resident: false },
+  "Personal:eliminar": { condo_admin: true, committee: false, guard: false, resident: false },
 };
 
 export async function hasPermission(base44, stored, condominiumId, key) {
@@ -47,7 +55,7 @@ export async function hasPermission(base44, stored, condominiumId, key) {
       { limit: 1 }
     );
     const items = Array.isArray(res) ? res : res?.items || [];
-    if (items.length > 0) return items[0].data?.allowed === true;
+    if (items.length > 0) return items[0].allowed === true;
   } catch (e) {
     // fall through to defaults
   }

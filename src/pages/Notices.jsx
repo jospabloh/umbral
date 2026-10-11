@@ -36,7 +36,7 @@ export default function Notices() {
   const load = () => {
     setLoading(true);
     base44.functions.invoke("community", { action: "listNotices" })
-      .then((res) => setNotices(res.items || []))
+      .then((res) => setNotices(res.data?.items || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   };

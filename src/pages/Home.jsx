@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { Building2, ShieldCheck, LifeBuoy, Info, UserCog, ArrowRight, QrCode, Wallet, Megaphone, ScanLine } from "lucide-react";
+import { Building2, ShieldCheck, LifeBuoy, Info, UserCog, ArrowRight, QrCode, Wallet, Megaphone, ScanLine, LayoutDashboard, Truck, Users } from "lucide-react";
 
 export default function Home() {
   const { user } = useAuth();
@@ -11,8 +11,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!user?.data?.condominium_id) { setLoading(false); return; }
-    base44.entities.Condominium.get(user.data.condominium_id)
-      .then(setCondo)
+    base44.functions.invoke("account", { action: "getCondominium" })
+      .then((res) => setCondo(res.data?.condominium || null))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user?.data?.condominium_id]);
@@ -41,6 +41,11 @@ export default function Home() {
   if (r === "guard" || r === "condo_admin" || r === "admin" || r === "committee") {
     quickLinks.push({ to: "/caseta", label: "Caseta", icon: ScanLine, desc: "Verificar pases y acceso" });
   }
+  if (r === "condo_admin" || r === "admin" || r === "committee") {
+    quickLinks.unshift({ to: "/panel", label: "Panel", icon: LayoutDashboard, desc: "Pendientes, saldos y control" });
+    quickLinks.push({ to: "/proveedores", label: "Proveedores", icon: Truck, desc: "Pagos a proveedores" });
+    quickLinks.push({ to: "/personal", label: "Personal", icon: Users, desc: "Vacaciones, ausencias y permisos" });
+  }
   quickLinks.push({ to: "/cuenta", label: "Mi cuenta", icon: UserCog, desc: "Perfil, miembros y dispositivos" });
   if (r === "condo_admin" || r === "admin") {
     quickLinks.push({ to: "/permisos", label: "Permisos", icon: ShieldCheck, desc: "Ajusta el acceso por rol" });
@@ -56,9 +61,9 @@ export default function Home() {
             <Building2 className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{condo?.data?.name || "Cargando..."}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{condo?.name || "Cargando..."}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {roleLabels[user?.role] || ""} · Estado: <span className="font-medium text-foreground">{condo?.data?.billing_status || "—"}</span>
+              {roleLabels[user?.role] || ""} · Estado: <span className="font-medium text-foreground">{condo?.billing_status || "—"}</span>
             </p>
           </div>
         </div>

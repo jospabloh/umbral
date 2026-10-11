@@ -26,8 +26,8 @@ export default function Layout() {
     (async () => {
       if (!user?.data?.condominium_id) return;
       try {
-        const res = await base44.entities.Condominium.get(user.data.condominium_id);
-        if (!cancelled) setCondo(res);
+        const res = await base44.functions.invoke("account", { action: "getCondominium" });
+        if (!cancelled) setCondo(res.data?.condominium || null);
       } catch (e) {
         // non-fatal
       }
@@ -48,7 +48,7 @@ export default function Layout() {
     return () => { cancelled = true; };
   }, [user?.role, user?.data?.condominium_id, location.pathname]);
 
-  const degraded = condo?.data?.billing_status === "view_only" || condo?.data?.billing_status === "suspended";
+  const degraded = condo?.billing_status === "view_only" || condo?.billing_status === "suspended";
 
   return (
     <div className="min-h-screen bg-background text-foreground">

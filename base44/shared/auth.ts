@@ -1,5 +1,7 @@
 // Shared backend helpers for Umbral: resolve the caller's stored record with
 // service role (never trust the cached session), and check billing status.
+// NOTE: entity records are flat — custom fields live at the top level, never
+// under a `data` wrapper.
 
 export async function resolveCaller(base44) {
   const caller = await base44.auth.me();
@@ -24,7 +26,7 @@ export async function resolveCaller(base44) {
 }
 
 export function billingBlocksWrites(condominium) {
-  const s = condominium?.data?.billing_status;
+  const s = condominium?.billing_status;
   return s === "view_only" || s === "suspended";
 }
 
