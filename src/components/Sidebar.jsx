@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Home, UserCog, ShieldCheck, Info, LifeBuoy, Building2, QrCode, Wallet, Megaphone, ScanLine, LayoutDashboard, Truck, Users } from "lucide-react";
+import { Home, UserCog, ShieldCheck, Info, LifeBuoy, Building2, QrCode, Wallet, Megaphone, ScanLine, LayoutDashboard, Truck, Users, BarChart3 } from "lucide-react";
 
 const SCROLL_KEY = "umbral-sidebar-scroll";
 
@@ -16,6 +16,7 @@ function navItems(role) {
     { to: "/caseta", label: "Caseta", icon: ScanLine, roles: ["admin", "condo_admin", "committee", "guard"] },
     { to: "/proveedores", label: "Proveedores", icon: Truck, roles: ["admin", "condo_admin", "committee"] },
     { to: "/personal", label: "Personal", icon: Users, roles: ["admin", "condo_admin", "committee"] },
+    { to: "/reportes", label: "Reportes", icon: BarChart3, roles: ["admin", "condo_admin", "committee"] },
     { to: "/cuenta", label: "Cuenta", icon: UserCog, roles: ["admin", "condo_admin", "committee", "guard", "resident"] },
     { to: "/permisos", label: "Permisos", icon: ShieldCheck, roles: ["admin", "condo_admin"] },
     { to: "/soporte", label: "Soporte", icon: LifeBuoy, roles: ["admin", "condo_admin", "committee", "guard", "resident"] },

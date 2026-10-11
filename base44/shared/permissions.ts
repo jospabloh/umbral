@@ -43,6 +43,7 @@ export const PERMISSION_DEFAULTS = {
   "Personal:crear": { condo_admin: true, committee: false, guard: false, resident: false },
   "Personal:modificar": { condo_admin: true, committee: false, guard: false, resident: false },
   "Personal:eliminar": { condo_admin: true, committee: false, guard: false, resident: false },
+  "Reportes:ver": { condo_admin: true, committee: true, guard: false, resident: false },
 };
 
 export async function hasPermission(base44, stored, condominiumId, key) {

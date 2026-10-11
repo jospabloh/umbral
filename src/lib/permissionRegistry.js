@@ -41,10 +41,11 @@ export const PERMISSION_DEFAULTS = {
   "Personal:crear": { condo_admin: true, committee: false, guard: false, resident: false },
   "Personal:modificar": { condo_admin: true, committee: false, guard: false, resident: false },
   "Personal:eliminar": { condo_admin: true, committee: false, guard: false, resident: false },
+  "Reportes:ver": { condo_admin: true, committee: true, guard: false, resident: false },
 };
 
 export const PERMISSION_SECTIONS = [
-  "Unidades", "Residentes", "Vehiculos", "Accesos", "Cuotas", "Pagos", "Avisos", "Miembros", "Proveedores", "Personal",
+  "Unidades", "Residentes", "Vehiculos", "Accesos", "Cuotas", "Pagos", "Avisos", "Miembros", "Proveedores", "Personal", "Reportes",
 ];
 
 export const PERMISSION_ACTIONS = ["ver", "crear", "modificar", "eliminar"];

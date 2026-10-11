@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { Building2, ShieldCheck, LifeBuoy, Info, UserCog, ArrowRight, QrCode, Wallet, Megaphone, ScanLine, LayoutDashboard, Truck, Users } from "lucide-react";
+import { Building2, ShieldCheck, LifeBuoy, Info, UserCog, ArrowRight, QrCode, Wallet, Megaphone, ScanLine, LayoutDashboard, Truck, Users, BarChart3 } from "lucide-react";
 
 export default function Home() {
   const { user } = useAuth();
@@ -45,6 +45,7 @@ export default function Home() {
     quickLinks.unshift({ to: "/panel", label: "Panel", icon: LayoutDashboard, desc: "Pendientes, saldos y control" });
     quickLinks.push({ to: "/proveedores", label: "Proveedores", icon: Truck, desc: "Pagos a proveedores" });
     quickLinks.push({ to: "/personal", label: "Personal", icon: Users, desc: "Vacaciones, ausencias y permisos" });
+    quickLinks.push({ to: "/reportes", label: "Reportes", icon: BarChart3, desc: "Gastos contra ingresos y Excel" });
   }
   quickLinks.push({ to: "/cuenta", label: "Mi cuenta", icon: UserCog, desc: "Perfil, miembros y dispositivos" });
   if (r === "condo_admin" || r === "admin") {

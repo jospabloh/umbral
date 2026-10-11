@@ -28,6 +28,7 @@ import PublicPass from '@/pages/PublicPass';
 import Panel from '@/pages/Panel';
 import Suppliers from '@/pages/Suppliers';
 import Staff from '@/pages/Staff';
+import Reports from '@/pages/Reports';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -68,6 +69,7 @@ const AuthenticatedApp = () => {
           <Route path="/panel" element={<Panel />} />
           <Route path="/proveedores" element={<Suppliers />} />
           <Route path="/personal" element={<Staff />} />
+          <Route path="/reportes" element={<Reports />} />
           <Route path="/unidades" element={<Units />} />
           <Route path="/accesos" element={<Access />} />
           <Route path="/cuotas" element={<Billing />} />
