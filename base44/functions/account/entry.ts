@@ -1,5 +1,10 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
 import { resolveCaller, guardBilling, asPage } from "../../shared/auth.ts";
+import { hasPermission } from "../../shared/permissions.ts";
+
+// Tenant roles a condo admin may assign. Built-in `admin` is the platform's
+// (ACACIA Standard module 24) and is never assignable or touchable from here.
+const TENANT_ROLES = ["condo_admin", "committee", "guard", "resident"];
 
 export default async function (req) {
   try {
@@ -41,11 +46,15 @@ export default async function (req) {
     // ---- members ----
     if (action === "listMembers") {
       if (!condominiumId) return Response.json({ members: [] });
-      const res = await base44.asServiceRole.entities.User.filter(
-        { "data.condominium_id": condominiumId },
-        { limit: 200 }
-      );
-      const users = asPage(res);
+      // The directory carries every member's email and phone: only roles granted
+      // Miembros:ver get it. Others still get the condominium card below.
+      const canSeeMembers = await hasPermission(base44, stored, condominiumId, "Miembros:ver");
+      const users = canSeeMembers
+        ? asPage(await base44.asServiceRole.entities.User.filter(
+            { "data.condominium_id": condominiumId },
+            { limit: 200 }
+          ))
+        : [];
       const members = users.map((u) => ({
         id: u.id,
         email: u.email,
@@ -101,8 +110,11 @@ export default async function (req) {
       if (!target || target.data?.condominium_id !== condominiumId) {
         return Response.json({ error: "Miembro no encontrado." }, { status: 404 });
       }
+      if (target.role === "admin") {
+        return Response.json({ error: "No se puede modificar una cuenta de plataforma." }, { status: 403 });
+      }
       const newRole = body.role;
-      if (!newRole || newRole === "admin") {
+      if (!TENANT_ROLES.includes(newRole)) {
         return Response.json({ error: "Rol no válido." }, { status: 400 });
       }
       // Prevent leaving the condo without an admin when demoting the only condo_admin.
@@ -128,6 +140,9 @@ export default async function (req) {
       const target = await base44.asServiceRole.entities.User.get(body.user_id);
       if (!target || target.data?.condominium_id !== condominiumId) {
         return Response.json({ error: "Miembro no encontrado." }, { status: 404 });
+      }
+      if (target.role === "admin") {
+        return Response.json({ error: "No se puede modificar una cuenta de plataforma." }, { status: 403 });
       }
       if (target.role === "condo_admin") {
         const res = await base44.asServiceRole.entities.User.filter(
@@ -155,12 +170,26 @@ export default async function (req) {
       if (!target || target.data?.condominium_id !== condominiumId) {
         return Response.json({ error: "Miembro no encontrado." }, { status: 404 });
       }
+      // Delegating to yourself would promote then demote you, leaving zero admins.
+      if (target.id === caller.id) {
+        return Response.json({ error: "Elige a otro miembro." }, { status: 400 });
+      }
+      if (target.role === "admin") {
+        return Response.json({ error: "No se puede delegar a una cuenta de plataforma." }, { status: 400 });
+      }
       await base44.asServiceRole.entities.User.update(target.id, { role: "condo_admin" });
-      await base44.asServiceRole.entities.User.update(caller.id, { role: "committee" });
+      // Only a condo admin steps down; a platform admin acting here keeps its role.
+      if (stored.role === "condo_admin") {
+        await base44.asServiceRole.entities.User.update(caller.id, { role: "committee" });
+      }
       return Response.json({ ok: true });
     }
 
     if (action === "requestDeletion") {
+      if (!condominiumId) return Response.json({ error: "Sin condominio." }, { status: 400 });
+      if (stored.role !== "condo_admin" && stored.role !== "admin") {
+        return Response.json({ error: "No autorizado." }, { status: 403 });
+      }
       await base44.asServiceRole.entities.SupportTicket.create({
         condominium_id: condominiumId,
         created_by_user_id: caller.id,

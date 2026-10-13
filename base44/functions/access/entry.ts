@@ -32,19 +32,31 @@ export default async function (req) {
       const validFrom = pass.valid_from ? new Date(pass.valid_from).getTime() : 0;
       const validUntil = pass.valid_until ? new Date(pass.valid_until).getTime() : Infinity;
       const isValid = pass.status === "active" && now >= validFrom && now <= validUntil;
+      // Anyone holding the link sees only what the public pass page renders.
+      // Ids and the visitor's phone go only to staff of the pass's own condominium
+      // (the guard booth needs the ids to register the event).
+      let isStaff = false;
+      try {
+        const ctx = await resolveCaller(base44);
+        isStaff = ctx.ok && ctx.condominiumId === pass.condominium_id &&
+          ["guard", "condo_admin", "committee", "admin"].includes(ctx.stored.role);
+      } catch (e) {
+        isStaff = false;
+      }
       return Response.json({
         pass: {
-          id: pass.id,
+          ...(isStaff ? { id: pass.id, visitor_phone: pass.visitor_phone } : {}),
           visitor_name: pass.visitor_name,
-          visitor_phone: pass.visitor_phone,
           pass_type: pass.pass_type,
           valid_from: pass.valid_from,
           valid_until: pass.valid_until,
           status: pass.status,
           note: pass.note,
         },
-        unit: unit ? { id: unit.id, internal_id: unit.internal_id, label: unit.label } : null,
-        condominium: condo ? { name: condo.name, address: condo.address } : null,
+        unit: unit
+          ? { ...(isStaff ? { id: unit.id } : {}), internal_id: unit.internal_id, label: unit.label }
+          : null,
+        condominium: condo ? { name: condo.name } : null,
         valid: isValid,
       });
     }
@@ -153,12 +165,31 @@ export default async function (req) {
         return Response.json({ error: "Tipo de evento no válido." }, { status: 400 });
       }
       const now = new Date().toISOString();
+      // pass_id and unit_id come from the body: check each against the STORED
+      // record's condominium before using it (ACACIA Standard module 14).
+      let pass = null;
+      if (body.pass_id) {
+        try {
+          pass = await base44.asServiceRole.entities.AccessPass.get(body.pass_id);
+        } catch (e) {
+          pass = null;
+        }
+        if (!pass || pass.condominium_id !== condominiumId) {
+          return Response.json({ error: "Pase no encontrado." }, { status: 404 });
+        }
+      }
       let unitLabel = "";
       if (body.unit_id) {
+        let u = null;
         try {
-          const u = await base44.asServiceRole.entities.Unit.get(body.unit_id);
-          if (u) unitLabel = u.internal_id;
-        } catch (e) {}
+          u = await base44.asServiceRole.entities.Unit.get(body.unit_id);
+        } catch (e) {
+          u = null;
+        }
+        if (!u || u.condominium_id !== condominiumId) {
+          return Response.json({ error: "Unidad no encontrada." }, { status: 404 });
+        }
+        unitLabel = u.internal_id;
       }
       const event = await base44.asServiceRole.entities.AccessEvent.create({
         condominium_id: condominiumId,
@@ -169,16 +200,13 @@ export default async function (req) {
         guard_name: stored.data?.full_name || caller.email,
         visitor_name: (body.visitor_name || "").trim() || null,
         event_type,
-        occurred_at: body.occurred_at || now,
+        occurred_at: now,
         note: (body.note || "").trim() || null,
       });
       // Mark single-use passes as used after an entry.
-      if (event_type === "entry" && body.pass_id) {
+      if (event_type === "entry" && pass && pass.pass_type === "single" && pass.status === "active") {
         try {
-          const pass = await base44.asServiceRole.entities.AccessPass.get(body.pass_id);
-          if (pass && pass.pass_type === "single" && pass.status === "active") {
-            await base44.asServiceRole.entities.AccessPass.update(body.pass_id, { ...pass, status: "used" });
-          }
+          await base44.asServiceRole.entities.AccessPass.update(pass.id, { ...pass, status: "used" });
         } catch (e) {}
       }
       return Response.json({ event });
