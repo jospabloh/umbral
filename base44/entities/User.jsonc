@@ -16,6 +16,14 @@
     },
     "data": {
       "type": "object",
+      "description": "Solo escritura de plataforma (rls.write = admin). Este candado gobierna la ESCRITURA, no la lectura: quitarlo no puede arreglar ningún síntoma de lectura. Existe porque data.condominium_id es el puntero de tenant que leen todas las reglas RLS ({{user.data.condominium_id}}) y resolveCaller en el backend; sin él, cualquier cuenta se reasigna a otro condominio con auth.updateMe y entra como su rol actual (auditoría 2026-10-13, ACACIA Standard módulos 14/19/24). El candado va sobre el objeto completo porque es la propiedad de primer nivel; full_name y phone se editan por la función account (updateProfile, service role).",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      },
       "properties": {
         "condominium_id": {
           "type": "string",
