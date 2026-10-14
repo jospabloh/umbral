@@ -14,9 +14,46 @@
       ],
       "default": "user"
     },
+    "condominium_id": {
+      "type": "string",
+      "description": "Puntero de tenant. Solo escritura de plataforma (rls.write = admin); lo escriben únicamente las funciones onboarding y account con service role. Este candado gobierna la ESCRITURA, no la lectura: quitarlo no puede arreglar ningún síntoma de lectura. Todas las reglas RLS comparan contra {{user.data.condominium_id}} y resolveCaller lo lee en el backend; sin el candado, cualquier cuenta se reasigna a otro condominio con auth.updateMe y entra con su rol actual (auditoría 2026-10-13, ACACIA Standard módulos 14/19/24).",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "unit_id": {
+      "type": "string",
+      "description": "Unidad del residente. Solo escritura de plataforma (rls.write = admin): las funciones access y billing deciden con este campo qué unidad puede ver y usar un residente (pases, estados de cuenta, facturas), así que abrirlo deja a un residente actuar por otra unidad. Gobierna la ESCRITURA, no la lectura.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "phone": {
+      "type": "string"
+    },
+    "legacy_migrated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cuándo resolveCaller copió los campos del objeto legado `data` a los de primer nivel. Solo escritura de plataforma (rls.write = admin): mientras esté vacío la migración puede correr, así que abrirlo permitiría repetirla y devolver a un miembro removido al condominio de su copia vieja. Gobierna la ESCRITURA, no la lectura.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
     "data": {
       "type": "object",
-      "description": "Solo escritura de plataforma (rls.write = admin). Este candado gobierna la ESCRITURA, no la lectura: quitarlo no puede arreglar ningún síntoma de lectura. Existe porque data.condominium_id es el puntero de tenant que leen todas las reglas RLS ({{user.data.condominium_id}}) y resolveCaller en el backend; sin él, cualquier cuenta se reasigna a otro condominio con auth.updateMe y entra como su rol actual (auditoría 2026-10-13, ACACIA Standard módulos 14/19/24). El candado va sobre el objeto completo porque es la propiedad de primer nivel; full_name y phone se editan por la función account (updateProfile, service role).",
+      "description": "LEGADO, solo lectura de migración. Declarar un campo propio llamado `data` hizo que Base44 lo guardara anidado (data.data.condominium_id), así que ninguna regla {{user.data.condominium_id}} lo veía. Ya nada escribe aquí; resolveCaller lo copia una vez a los campos de primer nivel y marca legacy_migrated_at. Sigue con rls.write = admin porque guarda una copia vieja del puntero de tenant; ese candado gobierna la ESCRITURA, no la lectura. Se quita cuando ningún registro dependa de él.",
       "rls": {
         "write": {
           "user_condition": {
@@ -26,12 +63,10 @@
       },
       "properties": {
         "condominium_id": {
-          "type": "string",
-          "description": "Solo escritura de plataforma. De este campo depende el aislamiento entre condominios; si se abre, una cuenta puede asignarse a otro condominio. Esta regla gobierna la escritura, no la lectura."
+          "type": "string"
         },
         "unit_id": {
-          "type": "string",
-          "description": "Solo escritura de plataforma. De este campo depende el aislamiento entre condominios; si se abre, una cuenta puede asignarse a otro condominio. Esta regla gobierna la escritura, no la lectura."
+          "type": "string"
         },
         "full_name": {
           "type": "string"

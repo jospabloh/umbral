@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { resolveCaller } from "../../shared/auth.ts";
+import { resolveCaller, readUser } from "../../shared/auth.ts";
 import { fetchLegalVersion } from "../../shared/legalVersion.ts";
 
 export default async function (req) {
@@ -48,7 +48,7 @@ export default async function (req) {
 
       await base44.asServiceRole.entities.User.update(caller.id, {
         role: "condo_admin",
-        data: { ...(stored.data || {}), condominium_id: condo.id },
+        condominium_id: condo.id,
       });
 
       await base44.asServiceRole.entities.LegalAcceptance.create({
@@ -58,7 +58,7 @@ export default async function (req) {
         decision: "accepted",
         decided_at: now,
         decided_by_user_id: caller.id,
-        decided_by_name: stored.data?.full_name || "",
+        decided_by_name: stored.full_name || "",
         decided_by_email: caller.email,
       });
 
@@ -86,7 +86,7 @@ export default async function (req) {
         condominium_id: condo.id,
         user_id: caller.id,
         user_email: caller.email,
-        user_name: stored.data?.full_name || "",
+        user_name: stored.full_name || "",
         requested_role: body.requested_role || "resident",
         requested_unit_id: body.requested_unit_id || null,
         status: "pending",
@@ -107,9 +107,9 @@ export default async function (req) {
       if (!jr || jr.condominium_id !== condominiumId) {
         return Response.json({ error: "Solicitud no encontrada." }, { status: 404 });
       }
-      const targetUser = await base44.asServiceRole.entities.User.get(jr.user_id);
+      const targetUser = await readUser(base44, jr.user_id);
       if (!targetUser) return Response.json({ error: "Cuenta no encontrada." }, { status: 404 });
-      if (targetUser.data?.condominium_id) {
+      if (targetUser.condominium_id) {
         return Response.json({ error: "Esa cuenta ya pertenece a otro condominio." }, { status: 409 });
       }
       const newRole = body.role || jr.requested_role || "resident";
@@ -118,7 +118,8 @@ export default async function (req) {
       }
       await base44.asServiceRole.entities.User.update(targetUser.id, {
         role: newRole,
-        data: { ...(targetUser.data || {}), condominium_id: condominiumId, unit_id: body.unit_id || jr.requested_unit_id || null },
+        condominium_id: condominiumId,
+        unit_id: body.unit_id || jr.requested_unit_id || "",
       });
       await base44.asServiceRole.entities.JoinRequest.update(requestId, {
         ...jr,

@@ -95,7 +95,7 @@ export default async function (req) {
         decision,
         decided_at: now,
         decided_by_user_id: caller.id,
-        decided_by_name: stored.data?.full_name || "",
+        decided_by_name: stored.full_name || "",
         decided_by_email: caller.email,
       });
 
@@ -113,7 +113,7 @@ export default async function (req) {
           created_by_user_id: caller.id,
           type: "legal",
           subject: decision === "rejected" ? "Rechazo de términos" : "Aceptación tras rechazo",
-          message: `El administrador ${stored.data?.full_name || caller.email} decidió ${decision} la versión ${version.version}.`,
+          message: `El administrador ${stored.full_name || caller.email} decidió ${decision} la versión ${version.version}.`,
           status: "submitted",
           app: "umbral",
         });

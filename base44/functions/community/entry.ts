@@ -34,7 +34,7 @@ export default async function (req) {
       const notice = await base44.asServiceRole.entities.Notice.create({
         condominium_id: condominiumId,
         created_by_user_id: caller.id,
-        created_by_name: stored.data?.full_name || caller.email,
+        created_by_name: stored.full_name || caller.email,
         title,
         body: text,
         type: body.type || "info",

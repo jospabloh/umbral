@@ -81,7 +81,23 @@ export const AuthProvider = ({ children }) => {
     try {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
-      const currentUser = await base44.auth.me();
+      let currentUser = await base44.auth.me();
+      // Accounts created before the User fields moved to the top level carry
+      // them in a legacy object. Any backend call migrates the record once
+      // (resolveCaller); re-read so this first render already sees the result.
+      if (currentUser && !currentUser.legacy_migrated_at) {
+        try {
+          const res = await base44.functions.invoke('account', { action: 'getCondominium' });
+          currentUser = await base44.auth.me();
+          // If the server could not persist the migration it still answered from
+          // the migrated view; show the same condominium (display only — every
+          // decision is taken server-side).
+          const condoId = res?.data?.condominium?.id;
+          if (condoId && !currentUser.condominium_id) currentUser = { ...currentUser, condominium_id: condoId };
+        } catch (e) {
+          console.error('User migration check failed:', e);
+        }
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
