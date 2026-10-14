@@ -36,10 +36,14 @@ export default async function (req) {
 
     // ---- profile ----
     if (action === "updateProfile") {
-      const patch = {};
-      if (typeof body.full_name === "string") patch.full_name = body.full_name;
-      if (typeof body.phone === "string") patch.phone = body.phone;
-      if (Object.keys(patch).length) await base44.asServiceRole.entities.User.update(caller.id, patch);
+      // Two writes: full_name is built-in, so a refusal there must not take the
+      // phone change with it.
+      if (typeof body.phone === "string") {
+        await base44.asServiceRole.entities.User.update(caller.id, { phone: body.phone });
+      }
+      if (typeof body.full_name === "string") {
+        await base44.asServiceRole.entities.User.update(caller.id, { full_name: body.full_name });
+      }
       return Response.json({ ok: true });
     }
 
@@ -155,8 +159,12 @@ export default async function (req) {
       }
       await base44.asServiceRole.entities.User.update(target.id, {
         role: "user",
-        condominium_id: null,
-        unit_id: null,
+        // "" not null: the fields are typed string. Empty counts as no
+        // condominium everywhere. Emptying the legacy object too leaves nothing
+        // a later migration could copy back in.
+        condominium_id: "",
+        unit_id: "",
+        data: {},
       });
       return Response.json({ ok: true });
     }

@@ -54,7 +54,12 @@ Last multi-tenant isolation audit: 2026-10-13 —
   `readUser` copy the legacy object once and set `legacy_migrated_at` (also
   locked) — the mark is what stops a removed member from being copied back in.
   The legacy `data` field stays declared and locked until no record needs it;
-  removing it is a later change.
+  removing it is a later change. Only an account's own request persists its
+  migration (`readUser` on other ids is read-only), a failed migration write
+  lets the request proceed on the migrated view, and `removeMember` empties the
+  legacy object. Symptom to recognise: a second condo_admin who has not made a
+  request since the deploy is not yet counted by the last-admin check, so
+  removing/deleting the other admin is refused until they log in once.
 - **OPEN (low):** `issueInvoice` takes the attachment URL from the body;
   `requestInvoice` lets guard/committee send any payment's CFDI to any address;
   `approveMember` / `units` / `billing` store foreign ids (`unit_id`,

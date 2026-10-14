@@ -13,11 +13,11 @@ function legacyFields(stored) {
   return d.data && typeof d.data === "object" ? d.data : d;
 }
 
-// Copy the legacy fields to the top-level ones exactly once, then mark the
-// record. The mark matters: removing a member clears condominium_id, and
-// without it the next request would copy the stale legacy pointer back in.
-async function migrateLegacy(base44, stored) {
-  if (stored.legacy_migrated_at) return stored;
+// The record as it should read once migrated: top-level values win, legacy
+// fills what is missing — until the mark says the copy already happened.
+// Pure: no writes, so it is safe on any account id.
+function migratedView(stored) {
+  if (stored.legacy_migrated_at) return { view: stored, patch: null };
   const legacy = legacyFields(stored);
   const patch = { legacy_migrated_at: new Date().toISOString() };
   if (legacy) {
@@ -25,22 +25,41 @@ async function migrateLegacy(base44, stored) {
     if (!stored.unit_id && legacy.unit_id) patch.unit_id = legacy.unit_id;
     if (!stored.phone && legacy.phone) patch.phone = legacy.phone;
   }
-  await base44.asServiceRole.entities.User.update(stored.id, patch);
-  const migrated = { ...stored, ...patch };
-  // full_name is a built-in field: copy it in its own write so a refusal
-  // there can never block the tenant pointer migration above.
-  if (legacy?.full_name && !stored.full_name) {
+  const view = { ...stored, ...patch };
+  if (legacy?.full_name && !stored.full_name) view.full_name = legacy.full_name;
+  return { view, patch };
+}
+
+// Persist the caller's own migration once, then mark the record. The mark
+// matters: removing a member clears condominium_id, and without it the next
+// request would copy the stale legacy pointer back in (removeMember also
+// empties the legacy object, so there is nothing left to copy either way).
+// A failed write never blocks the request: it proceeds on the migrated view
+// and retries next time.
+async function migrateLegacy(base44, stored) {
+  const { view, patch } = migratedView(stored);
+  if (!patch) return view;
+  try {
+    await base44.asServiceRole.entities.User.update(stored.id, patch);
+  } catch (e) {
+    console.error("legacy migration write failed", stored.id, e?.message);
+    return view;
+  }
+  // full_name is a built-in field: its own write, so a refusal there can
+  // never block the tenant pointer migration above.
+  if (view.full_name && view.full_name !== stored.full_name) {
     try {
-      await base44.asServiceRole.entities.User.update(stored.id, { full_name: legacy.full_name });
-      migrated.full_name = legacy.full_name;
+      await base44.asServiceRole.entities.User.update(stored.id, { full_name: view.full_name });
     } catch (e) {
       console.error("legacy full_name copy failed", stored.id, e?.message);
     }
   }
-  return migrated;
+  return view;
 }
 
-// Read another account through the service role, migrated like the caller.
+// Read another account through the service role, shown as migrated but never
+// written: the id comes from the request, and only the account itself may
+// trigger the persisted migration (resolveCaller).
 export async function readUser(base44, id) {
   if (!id) return null;
   let u;
@@ -49,7 +68,7 @@ export async function readUser(base44, id) {
   } catch (e) {
     return null;
   }
-  return u ? await migrateLegacy(base44, u) : null;
+  return u ? migratedView(u).view : null;
 }
 
 export async function resolveCaller(base44) {

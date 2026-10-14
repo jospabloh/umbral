@@ -87,8 +87,13 @@ export const AuthProvider = ({ children }) => {
       // (resolveCaller); re-read so this first render already sees the result.
       if (currentUser && !currentUser.legacy_migrated_at) {
         try {
-          await base44.functions.invoke('account', { action: 'getCondominium' });
+          const res = await base44.functions.invoke('account', { action: 'getCondominium' });
           currentUser = await base44.auth.me();
+          // If the server could not persist the migration it still answered from
+          // the migrated view; show the same condominium (display only — every
+          // decision is taken server-side).
+          const condoId = res?.data?.condominium?.id;
+          if (condoId && !currentUser.condominium_id) currentUser = { ...currentUser, condominium_id: condoId };
         } catch (e) {
           console.error('User migration check failed:', e);
         }
