@@ -14,20 +14,22 @@ function legacyFields(stored) {
 }
 
 // The record as it should read once migrated: top-level values win, legacy
-// fills what is missing — until the mark says the copy already happened.
+// fills what is missing (the pointers only until the mark says the copy
+// already happened).
 // Pure: no writes, so it is safe on any account id.
 function migratedView(stored) {
-  if (stored.legacy_migrated_at) return { view: stored, patch: null };
   const legacy = legacyFields(stored);
+  // full_name is copied by its own best-effort write; until that lands the
+  // view keeps falling back to the legacy name, mark or no mark.
+  const name = stored.full_name || legacy?.full_name;
+  if (stored.legacy_migrated_at) return { view: { ...stored, full_name: name }, patch: null };
   const patch = { legacy_migrated_at: new Date().toISOString() };
   if (legacy) {
     if (!stored.condominium_id && legacy.condominium_id) patch.condominium_id = legacy.condominium_id;
     if (!stored.unit_id && legacy.unit_id) patch.unit_id = legacy.unit_id;
     if (!stored.phone && legacy.phone) patch.phone = legacy.phone;
   }
-  const view = { ...stored, ...patch };
-  if (legacy?.full_name && !stored.full_name) view.full_name = legacy.full_name;
-  return { view, patch };
+  return { view: { ...stored, ...patch, full_name: name }, patch };
 }
 
 // Persist the caller's own migration once, then mark the record. The mark

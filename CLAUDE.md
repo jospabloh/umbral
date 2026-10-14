@@ -60,6 +60,11 @@ Last multi-tenant isolation audit: 2026-10-13 —
   legacy object. Symptom to recognise: a second condo_admin who has not made a
   request since the deploy is not yet counted by the last-admin check, so
   removing/deleting the other admin is refused until they log in once.
+  Residual race, accepted: if a member's very first request after the deploy
+  runs concurrently with their own removal, the in-flight migration can write
+  the old condominium back after the removal. One request per account for
+  life; `removeMember` setting the mark narrows it but cannot close it without
+  a conditional update, which Base44 does not offer.
 - **OPEN (low):** `issueInvoice` takes the attachment URL from the body;
   `requestInvoice` lets guard/committee send any payment's CFDI to any address;
   `approveMember` / `units` / `billing` store foreign ids (`unit_id`,

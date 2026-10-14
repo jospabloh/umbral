@@ -165,6 +165,7 @@ export default async function (req) {
         condominium_id: "",
         unit_id: "",
         data: {},
+        legacy_migrated_at: new Date().toISOString(),
       });
       return Response.json({ ok: true });
     }

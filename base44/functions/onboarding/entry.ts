@@ -119,7 +119,7 @@ export default async function (req) {
       await base44.asServiceRole.entities.User.update(targetUser.id, {
         role: newRole,
         condominium_id: condominiumId,
-        unit_id: body.unit_id || jr.requested_unit_id || null,
+        unit_id: body.unit_id || jr.requested_unit_id || "",
       });
       await base44.asServiceRole.entities.JoinRequest.update(requestId, {
         ...jr,
