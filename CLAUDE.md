@@ -13,9 +13,9 @@ Status after the 2026-10-13 audit — ✅ meets · 🟡 partial · ❌ missing:
 - ✅ 22 server-authoritative diffing (`resolveCaller` reads `User` fresh).
 - 🟡 1 licence · 2 roles · 3 permissions · 4 RLS · 5 health · 10 login · 18 one
   tenant · 21 About · 23 nav · 25 signup code.
+- ✅ 15 bridge **implemented in the repo, NOT live** (see below).
 - ❌ 6 changelog script · 7 danger zone · 8 tickets→MC · 9 site page · 11 deploy
-  scripts · 12 shared ThemeSwitcher · 13 smoke · 14 isolation · 15 bridge
-  (`acaciaControl`) · 16 secrets · 17 MC registration · 19 lock rationales ·
+  scripts · 12 shared ThemeSwitcher · 13 smoke · 14 isolation · 16 secrets · 17 MC registration · 19 lock rationales ·
   20 shared session + 48h reap · 24 tenant roles in CI · 26 function.meta.json ·
   28 privacy inventory · 29 shared shell · 30 update banner.
 - N/A 27 `mario_style` (not used).
@@ -65,6 +65,11 @@ Last multi-tenant isolation audit: 2026-10-13 —
   the old condominium back after the removal. One request per account for
   life; `removeMember` setting the mark narrows it but cannot close it without
   a conditional update, which Base44 does not offer.
+- **OPEN (low) — SDK pagination:** the app's own functions call `list(options)`
+  / `filter(q, options)`, which in @base44/sdk return ONE cursor page (default
+  100, `limit` caps it; `next_cursor` is never followed). Fine at today's sizes,
+  silently truncates later. `acaciaControl` already uses the array form
+  (`list(sort, limit)`), like Sommel.
 - **OPEN (low):** `issueInvoice` takes the attachment URL from the body;
   `requestInvoice` lets guard/committee send any payment's CFDI to any address;
   `approveMember` / `units` / `billing` store foreign ids (`unit_id`,
@@ -93,3 +98,25 @@ Migration verified live 2026-10-14: the one user has top-level
 matches it — it matched nothing before.
 Privacy last checked (Module 28): 2026-10-13 — no `privacy/data-inventory.json`.
 Terms acceptance (Module 28, rule 10): observing — enforcement date not set.
+
+## Module 15 — bridge to Mission Control (implemented in repo 2026-10-14, NOT deployed)
+
+`base44/functions/acaciaControl/` (`entry.ts`, `_bridge_logic.ts`, `_acaciaSign.ts`
+= byte-identical copy of the standard's `shared/bridge/acaciaSign.ts`) mirrors
+Sommel's bridge. Tests: `base44/functions/acaciaSign.test.ts` and
+`base44/tests/bridge_test.ts` (`deno test --allow-env`). Outbound pings to MC
+(`ticket-pull`, `tenant-pull`) go through `base44/shared/mcPing.ts`. Schema:
+`Condominium.license_expires_at` / `license_plan` (write-locked to admin),
+`SupportTicket.created_by_email`. None of this is deployed or registered in MC.
+
+**Secrets to set in Base44 BEFORE registering `umbral` in Mission Control:**
+- `INGEST_HMAC_SECRET` — copy of the portfolio value (never a new one).
+- `ACACIA_APP_SLUG` = `umbral` (must equal `apps.id`; read it back, Module 16).
+- `PLATFORM_OWNER_EMAIL` — receives the copy of every follow-up sent to a tenant.
+- `APP_SUPPORT_EMAIL` — optional; extra allowed recipient for internal notices.
+
+Until they are set `acaciaControl` answers **503 `bridge_not_configured`** to
+every call. That is the intended fail-closed state, not an outage. Deploying the
+schema and functions, registering the app in MC (Module 17: `apps` row,
+`licenseControl.js`, `ticketControl.js`, `messaging.js`, client catalogue) and a
+sync with zero `rejected the derived key` warnings are still to do.

@@ -36,7 +36,30 @@
     "trial_end_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Solo escritura de plataforma."
+      "description": "Fin de la prueba. Solo escritura de plataforma: la fija onboarding al crear (service role) y Mission Control v\u00eda acaciaControl. Esta regla gobierna la ESCRITURA, no la lectura: la app la lee para mostrar los d\u00edas restantes; un inquilino no debe poder alargar su propia prueba."
+    },
+    "license_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Vencimiento de la licencia pagada. Solo escritura de plataforma (rls.write = admin): la escribe \u00fanicamente Mission Control v\u00eda acaciaControl (service role). Este candado gobierna la ESCRITURA, no la lectura: la app puede leerla para avisar del vencimiento. Un inquilino no debe poder extender su propia licencia.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "license_plan": {
+      "type": "string",
+      "description": "Plan de la licencia. Solo escritura de plataforma (rls.write = admin): la escribe \u00fanicamente Mission Control v\u00eda acaciaControl (service role). Este candado gobierna la ESCRITURA, no la lectura. Un inquilino no debe poder cambiarse de plan por su cuenta.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "legal_version": {
       "type": "string",

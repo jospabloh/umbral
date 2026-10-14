@@ -1,6 +1,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
 import { resolveCaller, readUser, guardBilling, asPage } from "../../shared/auth.ts";
 import { hasPermission } from "../../shared/permissions.ts";
+import { pingMissionControl } from "../../shared/mcPing.ts";
 
 // Tenant roles a condo admin may assign. Built-in `admin` is the platform's
 // (ACACIA Standard module 24) and is never assignable or touchable from here.
@@ -200,15 +201,17 @@ export default async function (req) {
       if (stored.role !== "condo_admin" && stored.role !== "admin") {
         return Response.json({ error: "No autorizado." }, { status: 403 });
       }
-      await base44.asServiceRole.entities.SupportTicket.create({
+      const created = await base44.asServiceRole.entities.SupportTicket.create({
         condominium_id: condominiumId,
         created_by_user_id: caller.id,
+        created_by_email: caller.email,
         type: "arco",
         subject: "Solicitud de borrado del condominio",
         message: body.reason || "Sin motivo adicional.",
         status: "submitted",
         app: "umbral",
       });
+      await pingMissionControl("/api/ingest/ticket-pull", { app: "umbral", ticketId: created.id });
       return Response.json({ ok: true });
     }
 

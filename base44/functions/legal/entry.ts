@@ -1,6 +1,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
 import { resolveCaller } from "../../shared/auth.ts";
 import { fetchLegalVersion } from "../../shared/legalVersion.ts";
+import { pingMissionControl } from "../../shared/mcPing.ts";
 
 export default async function (req) {
   try {
@@ -108,15 +109,17 @@ export default async function (req) {
 
       // A rejection, or an acceptance that follows a rejection, opens a legal ticket.
       if (decision === "rejected" || (decision === "accepted" && prevDecision === "rejected")) {
-        await base44.asServiceRole.entities.SupportTicket.create({
+        const created = await base44.asServiceRole.entities.SupportTicket.create({
           condominium_id: condominiumId,
           created_by_user_id: caller.id,
+          created_by_email: caller.email,
           type: "legal",
           subject: decision === "rejected" ? "Rechazo de términos" : "Aceptación tras rechazo",
           message: `El administrador ${stored.full_name || caller.email} decidió ${decision} la versión ${version.version}.`,
           status: "submitted",
           app: "umbral",
         });
+        await pingMissionControl("/api/ingest/ticket-pull", { app: "umbral", ticketId: created.id });
       }
 
       return Response.json({ ok: true, decision, version: version.version });

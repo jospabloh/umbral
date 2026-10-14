@@ -8,6 +8,10 @@
     "created_by_user_id": {
       "type": "string"
     },
+    "created_by_email": {
+      "type": "string",
+      "description": "Correo de quien levant\u00f3 el ticket, copiado al crearlo (support, legal, account). Mission Control lo muestra sin buscar la cuenta."
+    },
     "type": {
       "type": "string",
       "enum": [
