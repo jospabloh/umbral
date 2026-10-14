@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
 import { resolveCaller } from "../../shared/auth.ts";
+import { pingMissionControl } from "../../shared/mcPing.ts";
 
 export default async function (req) {
   try {
@@ -22,16 +23,18 @@ export default async function (req) {
       return Response.json({ error: "Asunto y mensaje son obligatorios." }, { status: 400 });
     }
 
-    await base44.asServiceRole.entities.SupportTicket.create({
+    const created = await base44.asServiceRole.entities.SupportTicket.create({
       condominium_id: condominiumId,
       created_by_user_id: caller.id,
+      created_by_email: caller.email,
       type,
       subject,
       message,
       status: "submitted",
       app: "umbral",
     });
-    return Response.json({ ok: true });
+    await pingMissionControl("/api/ingest/ticket-pull", { app: "umbral", ticketId: created.id });
+    return Response.json({ ok: true, ticket_id: created.id });
   } catch (error) {
     return Response.json({ error: error.message || "Error interno" }, { status: 500 });
   }

@@ -1,6 +1,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
 import { resolveCaller, readUser } from "../../shared/auth.ts";
 import { fetchLegalVersion } from "../../shared/legalVersion.ts";
+import { pingMissionControl } from "../../shared/mcPing.ts";
 
 export default async function (req) {
   try {
@@ -62,6 +63,7 @@ export default async function (req) {
         decided_by_email: caller.email,
       });
 
+      await pingMissionControl("/api/ingest/tenant-pull", { app: "umbral", tenantId: condo.id });
       return Response.json({ condominium: condo, join_code: joinCode });
     }
 
