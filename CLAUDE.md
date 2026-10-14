@@ -65,6 +65,11 @@ Last multi-tenant isolation audit: 2026-10-13 —
   the old condominium back after the removal. One request per account for
   life; `removeMember` setting the mark narrows it but cannot close it without
   a conditional update, which Base44 does not offer.
+- **OPEN (low) — SDK pagination:** the app's own functions call `list(options)`
+  / `filter(q, options)`, which in @base44/sdk return ONE cursor page (default
+  100, `limit` caps it; `next_cursor` is never followed). Fine at today's sizes,
+  silently truncates later. `acaciaControl` already uses the array form
+  (`list(sort, limit)`), like Sommel.
 - **OPEN (low):** `issueInvoice` takes the attachment URL from the body;
   `requestInvoice` lets guard/committee send any payment's CFDI to any address;
   `approveMember` / `units` / `billing` store foreign ids (`unit_id`,

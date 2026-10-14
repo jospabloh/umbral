@@ -206,7 +206,9 @@ export default async function (req) {
             failed.push(id);
           }
         }
-        return Response.json({ ok: failed.length === 0, revoked, failed });
+        // MC only checks the HTTP status (appBridge throws on non-2xx), so a
+        // partial failure must not answer 200.
+        return Response.json({ ok: failed.length === 0, revoked, failed }, { status: failed.length ? 502 : 200 });
       }
 
       default:
