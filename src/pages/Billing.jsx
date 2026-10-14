@@ -46,11 +46,11 @@ export default function Billing() {
   const canWrite = ["admin", "condo_admin", "committee"].includes(role);
 
   useEffect(() => {
-    if (!user?.data?.condominium_id) return;
+    if (!user?.condominium_id) return;
     base44.functions.invoke("account", { action: "getCondominium" })
       .then((res) => setCondo(res.data?.condominium || null))
       .catch(() => {});
-  }, [user?.data?.condominium_id]);
+  }, [user?.condominium_id]);
 
   const load = () => {
     setLoading(true);

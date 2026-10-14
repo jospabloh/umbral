@@ -117,7 +117,7 @@ export default async function (req) {
         reason: (body.reason || "").trim() || null,
         status: "pending",
         requested_by_user_id: caller.id,
-        requested_by_name: stored.data?.full_name || caller.email,
+        requested_by_name: stored.full_name || caller.email,
         requested_at: new Date().toISOString(),
       });
       return Response.json({ leave });

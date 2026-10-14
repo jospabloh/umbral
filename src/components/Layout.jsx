@@ -24,7 +24,7 @@ export default function Layout() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!user?.data?.condominium_id) return;
+      if (!user?.condominium_id) return;
       try {
         const res = await base44.functions.invoke("account", { action: "getCondominium" });
         if (!cancelled) setCondo(res.data?.condominium || null);
@@ -33,11 +33,11 @@ export default function Layout() {
       }
     })();
     return () => { cancelled = true; };
-  }, [user?.data?.condominium_id]);
+  }, [user?.condominium_id]);
 
   useEffect(() => {
     if (user?.role !== "condo_admin" && user?.role !== "admin") return;
-    if (!user?.data?.condominium_id) return;
+    if (!user?.condominium_id) return;
     let cancelled = false;
     (async () => {
       try {
@@ -46,7 +46,7 @@ export default function Layout() {
       } catch (e) {}
     })();
     return () => { cancelled = true; };
-  }, [user?.role, user?.data?.condominium_id, location.pathname]);
+  }, [user?.role, user?.condominium_id, location.pathname]);
 
   const degraded = condo?.billing_status === "view_only" || condo?.billing_status === "suspended";
 

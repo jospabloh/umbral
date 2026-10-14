@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.52";
-import { resolveCaller, guardBilling, asPage } from "../../shared/auth.ts";
+import { resolveCaller, readUser, guardBilling, asPage } from "../../shared/auth.ts";
 import { hasPermission } from "../../shared/permissions.ts";
 
 // Tenant roles a condo admin may assign. Built-in `admin` is the platform's
@@ -36,10 +36,10 @@ export default async function (req) {
 
     // ---- profile ----
     if (action === "updateProfile") {
-      const data = { ...(stored.data || {}) };
-      if (typeof body.full_name === "string") data.full_name = body.full_name;
-      if (typeof body.phone === "string") data.phone = body.phone;
-      await base44.asServiceRole.entities.User.update(caller.id, { data });
+      const patch = {};
+      if (typeof body.full_name === "string") patch.full_name = body.full_name;
+      if (typeof body.phone === "string") patch.phone = body.phone;
+      if (Object.keys(patch).length) await base44.asServiceRole.entities.User.update(caller.id, patch);
       return Response.json({ ok: true });
     }
 
@@ -51,7 +51,7 @@ export default async function (req) {
       const canSeeMembers = await hasPermission(base44, stored, condominiumId, "Miembros:ver");
       const users = canSeeMembers
         ? asPage(await base44.asServiceRole.entities.User.filter(
-            { "data.condominium_id": condominiumId },
+            { condominium_id: condominiumId },
             { limit: 200 }
           ))
         : [];
@@ -59,9 +59,9 @@ export default async function (req) {
         id: u.id,
         email: u.email,
         role: u.role,
-        full_name: u.data?.full_name || "",
-        phone: u.data?.phone || "",
-        unit_id: u.data?.unit_id || null,
+        full_name: u.full_name || "",
+        phone: u.phone || "",
+        unit_id: u.unit_id || null,
       }));
       return Response.json({
         members,
@@ -106,8 +106,8 @@ export default async function (req) {
       if (stored.role !== "condo_admin" && stored.role !== "admin") {
         return Response.json({ error: "No autorizado." }, { status: 403 });
       }
-      const target = await base44.asServiceRole.entities.User.get(body.user_id);
-      if (!target || target.data?.condominium_id !== condominiumId) {
+      const target = await readUser(base44, body.user_id);
+      if (!target || target.condominium_id !== condominiumId) {
         return Response.json({ error: "Miembro no encontrado." }, { status: 404 });
       }
       if (target.role === "admin") {
@@ -120,7 +120,7 @@ export default async function (req) {
       // Prevent leaving the condo without an admin when demoting the only condo_admin.
       if (target.role === "condo_admin" && newRole !== "condo_admin") {
         const res = await base44.asServiceRole.entities.User.filter(
-          { "data.condominium_id": condominiumId, role: "condo_admin" },
+          { condominium_id: condominiumId, role: "condo_admin" },
           { limit: 100 }
         );
         if (asPage(res).length <= 1) {
@@ -137,8 +137,8 @@ export default async function (req) {
       if (stored.role !== "condo_admin" && stored.role !== "admin") {
         return Response.json({ error: "No autorizado." }, { status: 403 });
       }
-      const target = await base44.asServiceRole.entities.User.get(body.user_id);
-      if (!target || target.data?.condominium_id !== condominiumId) {
+      const target = await readUser(base44, body.user_id);
+      if (!target || target.condominium_id !== condominiumId) {
         return Response.json({ error: "Miembro no encontrado." }, { status: 404 });
       }
       if (target.role === "admin") {
@@ -146,7 +146,7 @@ export default async function (req) {
       }
       if (target.role === "condo_admin") {
         const res = await base44.asServiceRole.entities.User.filter(
-          { "data.condominium_id": condominiumId, role: "condo_admin" },
+          { condominium_id: condominiumId, role: "condo_admin" },
           { limit: 100 }
         );
         if (asPage(res).length <= 1) {
@@ -155,7 +155,8 @@ export default async function (req) {
       }
       await base44.asServiceRole.entities.User.update(target.id, {
         role: "user",
-        data: { ...(target.data || {}), condominium_id: null, unit_id: null },
+        condominium_id: null,
+        unit_id: null,
       });
       return Response.json({ ok: true });
     }
@@ -166,8 +167,8 @@ export default async function (req) {
       if (stored.role !== "condo_admin" && stored.role !== "admin") {
         return Response.json({ error: "No autorizado." }, { status: 403 });
       }
-      const target = await base44.asServiceRole.entities.User.get(body.user_id);
-      if (!target || target.data?.condominium_id !== condominiumId) {
+      const target = await readUser(base44, body.user_id);
+      if (!target || target.condominium_id !== condominiumId) {
         return Response.json({ error: "Miembro no encontrado." }, { status: 404 });
       }
       // Delegating to yourself would promote then demote you, leaving zero admins.
@@ -240,7 +241,7 @@ export default async function (req) {
               billing_status: condominium.billing_status,
             }
           : null,
-        account: { email: caller.email, role: stored.role, full_name: stored.data?.full_name },
+        account: { email: caller.email, role: stored.role, full_name: stored.full_name },
         exported_at: new Date().toISOString(),
       });
     }
@@ -249,7 +250,7 @@ export default async function (req) {
     if (action === "deleteAccount") {
       if (stored.role === "condo_admin" && condominiumId) {
         const res = await base44.asServiceRole.entities.User.filter(
-          { "data.condominium_id": condominiumId, role: "condo_admin" },
+          { condominium_id: condominiumId, role: "condo_admin" },
           { limit: 100 }
         );
         if (asPage(res).length <= 1) {

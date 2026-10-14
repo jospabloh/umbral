@@ -51,7 +51,7 @@ export default function Account() {
         const pend = await base44.functions.invoke("account", { action: "listPending" });
         setPending(pend.data?.requests || []);
       }
-      if (user) setProfile({ full_name: user.data?.full_name || "", phone: user.data?.phone || "" });
+      if (user) setProfile({ full_name: user.full_name || "", phone: user.phone || "" });
     } catch (e) {} finally {
       setLoading(false);
     }

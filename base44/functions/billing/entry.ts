@@ -100,7 +100,7 @@ export default async function (req) {
         reference: (body.reference || "").trim() || null,
         applied_to_fee_id: body.applied_to_fee_id || null,
         registered_by_user_id: caller.id,
-        registered_by_name: stored.data?.full_name || caller.email,
+        registered_by_name: stored.full_name || caller.email,
         occurred_at: body.occurred_at || new Date().toISOString(),
         note: (body.note || "").trim() || null,
       });
@@ -121,7 +121,7 @@ export default async function (req) {
           fiscal_email: (body.fiscal_email || "").trim() || null,
           status: "pending",
           requested_by_user_id: caller.id,
-          requested_by_name: stored.data?.full_name || caller.email,
+          requested_by_name: stored.full_name || caller.email,
           requested_at: new Date().toISOString(),
         });
         return Response.json({ payment, invoice_request: req });
@@ -133,7 +133,7 @@ export default async function (req) {
       // Residents see only their own unit; admins/committee need Cuotas:ver for others.
       let unitId = body.unit_id;
       if (stored.role === "resident") {
-        unitId = stored.data?.unit_id || null;
+        unitId = stored.unit_id || null;
         if (!unitId) return Response.json({ error: "Sin unidad asignada." }, { status: 400 });
       } else {
         if (!unitId) return Response.json({ error: "Unidad requerida." }, { status: 400 });
@@ -224,7 +224,7 @@ export default async function (req) {
       if (!payment || payment.condominium_id !== condominiumId) {
         return Response.json({ error: "Pago no encontrado." }, { status: 404 });
       }
-      if (stored.role === "resident" && payment.unit_id !== stored.data?.unit_id) {
+      if (stored.role === "resident" && payment.unit_id !== stored.unit_id) {
         return Response.json({ error: "Solo puedes solicitar factura de tus propios pagos." }, { status: 403 });
       }
       const blocked = guardBilling(condominium);
@@ -243,7 +243,7 @@ export default async function (req) {
         fiscal_email: (body.fiscal_email || "").trim() || null,
         status: "pending",
         requested_by_user_id: caller.id,
-        requested_by_name: stored.data?.full_name || caller.email,
+        requested_by_name: stored.full_name || caller.email,
         requested_at: new Date().toISOString(),
       });
       return Response.json({ invoice_request: req });
@@ -269,7 +269,7 @@ export default async function (req) {
         invoice_file_uri: file_uri,
         issued_at: now,
         issued_by_user_id: caller.id,
-        issued_by_name: stored.data?.full_name || caller.email,
+        issued_by_name: stored.full_name || caller.email,
         note: (body.note || "").trim() || null,
       };
       await base44.asServiceRole.entities.InvoiceRequest.update(inv.id, updated);
@@ -419,7 +419,7 @@ export default async function (req) {
         occurred_at: body.occurred_at || new Date().toISOString(),
         status: "registrado",
         registered_by_user_id: caller.id,
-        registered_by_name: stored.data?.full_name || caller.email,
+        registered_by_name: stored.full_name || caller.email,
         note: (body.note || "").trim() || null,
       });
       return Response.json({ vendor_payment: vp });

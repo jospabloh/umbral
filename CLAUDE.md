@@ -42,16 +42,19 @@ Last multi-tenant isolation audit: 2026-10-13 —
   `removeMember` / `delegateCondominium` could touch a platform `admin`;
   `changeRole` accepted any role string; `requestDeletion` had no role gate.
 - **Fixed:** `LegalAcceptance` is append-only (`update`/`delete: false`).
-- **OPEN — User shape:** `User.jsonc` declares a custom field literally named
-  `data`, so the live pointer is stored at `data.data.condominium_id` (proven:
-  a filter on `data.data.condominium_id` matches the live user, one on
-  `data.condominium_id` matches nothing). Likely effects: the
-  `{{user.data.condominium_id}}` RLS templates resolve to nothing (fails closed;
-  the UI works because it reads through service-role functions), and the
-  functions' `{"data.condominium_id": …}` filters on `User` (member list,
-  last-admin count) match nothing. The fix is the portfolio shape — top-level
-  `condominium_id` / `unit_id` / `full_name` / `phone` with `rls.write` on the
-  pointers — plus migrating the live rows; it needs its own change.
+- **Fixed 2026-10-14 — User shape:** `User.jsonc` used to declare a custom
+  field literally named `data`, so the pointer was stored at
+  `data.data.condominium_id` (proven live: a filter on `data.data.condominium_id`
+  matched the user, one on `data.condominium_id` matched nothing). The
+  `{{user.data.condominium_id}}` RLS rules therefore saw nothing, and the
+  functions' `"data.condominium_id"` filters on `User` (member list, last-admin
+  count) matched nothing. Now `condominium_id`, `unit_id` and `phone` are
+  top-level custom fields (the StockFlow shape), both pointers with
+  `rls.write: admin`; the name is the built-in `full_name`. `resolveCaller` /
+  `readUser` copy the legacy object once and set `legacy_migrated_at` (also
+  locked) — the mark is what stops a removed member from being copied back in.
+  The legacy `data` field stays declared and locked until no record needs it;
+  removing it is a later change.
 - **OPEN (low):** `issueInvoice` takes the attachment URL from the body;
   `requestInvoice` lets guard/committee send any payment's CFDI to any address;
   `approveMember` / `units` / `billing` store foreign ids (`unit_id`,

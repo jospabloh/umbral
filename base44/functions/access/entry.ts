@@ -100,7 +100,7 @@ export default async function (req) {
       let unitLabel = "";
       // Residents can only create passes for their own unit.
       if (stored.role === "resident") {
-        unitId = stored.data?.unit_id || null;
+        unitId = stored.unit_id || null;
       }
       if (unitId) {
         try {
@@ -197,7 +197,7 @@ export default async function (req) {
         unit_id: body.unit_id || null,
         unit_label: unitLabel,
         guard_user_id: caller.id,
-        guard_name: stored.data?.full_name || caller.email,
+        guard_name: stored.full_name || caller.email,
         visitor_name: (body.visitor_name || "").trim() || null,
         event_type,
         occurred_at: now,

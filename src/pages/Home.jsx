@@ -10,14 +10,14 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.data?.condominium_id) { setLoading(false); return; }
+    if (!user?.condominium_id) { setLoading(false); return; }
     base44.functions.invoke("account", { action: "getCondominium" })
       .then((res) => setCondo(res.data?.condominium || null))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user?.data?.condominium_id]);
+  }, [user?.condominium_id]);
 
-  if (!user?.data?.condominium_id && !loading) return <Navigate to="/onboarding" replace />;
+  if (!user?.condominium_id && !loading) return <Navigate to="/onboarding" replace />;
 
   const roleLabels = {
     admin: "Plataforma",
