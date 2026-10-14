@@ -81,6 +81,15 @@ Last multi-tenant isolation audit: 2026-10-13 —
 Secrets last read back: never — the app reads no secrets yet (Module 16).
 Security locks last checked for drift (Module 19): 2026-10-13 — deployed `rls`
 blocks match the repo for all 19 entities; the only drift is that the deployed
-`User` has `required: ["data"]`.
+`User` has `required: ["data"]`. 2026-10-14: cause found — when an entity file
+omits `required`, Base44's sync marks EVERY property required (after the User
+reshape it deployed `required: [condominium_id, unit_id, phone,
+legacy_migrated_at, data]`, which can refuse a signup that carries none of
+them). `User.jsonc` now declares `"required": []`, as StockFlow's does; every
+entity file must declare `required` explicitly.
+Migration verified live 2026-10-14: the one user has top-level
+`condominium_id`, `legacy_migrated_at` = 2026-10-14T03:46:34Z, and a filter on
+`data.condominium_id` (the path `{{user.data.condominium_id}}` reads) now
+matches it — it matched nothing before.
 Privacy last checked (Module 28): 2026-10-13 — no `privacy/data-inventory.json`.
 Terms acceptance (Module 28, rule 10): observing — enforcement date not set.
