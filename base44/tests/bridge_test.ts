@@ -143,6 +143,8 @@ Deno.test('tenant pointer: top-level, else legacy data / data.data', () => {
   assertEquals(condominiumIdOf({ condominium_id: '', data: { condominium_id: 'c2' } }), 'c2');
   assertEquals(condominiumIdOf({ data: { data: { condominium_id: 'c3' } } }), 'c3');
   assertEquals(condominiumIdOf({ condominium_id: '', data: {} }), '');
+  // Migrated record: a cleared pointer never falls back to the legacy copy.
+  assertEquals(condominiumIdOf({ condominium_id: '', legacy_migrated_at: '2026-10-14T00:00:00Z', data: { condominium_id: 'c9' } }), '');
 });
 
 Deno.test('contacts: condo_admin only, platform admin and unscoped users skipped', () => {

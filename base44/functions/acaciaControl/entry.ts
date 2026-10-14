@@ -49,20 +49,14 @@ export default async function (req) {
     // Every condo_admin, oldest first, so "the owner" of a condominium is
     // deterministic when it has more than one.
     const condoAdmins = async () =>
-      asPage(await sr.entities.User.filter({ role: "condo_admin" }, { sort: "created_date", limit: COUNT_CAP }));
+      asPage(await sr.entities.User.filter({ role: "condo_admin" }, "created_date", COUNT_CAP));
 
-    // id -> User for the distinct ids given. One get per id, failures skipped.
+    // id -> User for the ids given. One read of every user (same cap as the
+    // other reads); an id with no user (deleted account) simply has no email.
     const usersById = async (ids) => {
       const out = new Map();
-      const unique = [...new Set(ids.filter((i) => typeof i === "string" && i))];
-      for (let i = 0; i < unique.length; i += 20) {
-        await Promise.all(unique.slice(i, i + 20).map(async (id) => {
-          try {
-            const u = await sr.entities.User.get(id);
-            if (u) out.set(id, u);
-          } catch { /* deleted account: the row simply has no email */ }
-        }));
-      }
+      if (!ids.some((i) => typeof i === "string" && i)) return out;
+      for (const u of asPage(await sr.entities.User.list("-created_date", COUNT_CAP))) out.set(u.id, u);
       return out;
     };
 
@@ -83,7 +77,7 @@ export default async function (req) {
         const bad = entityError(LICENSE_ENTITY, params.entity);
         if (bad) return Response.json({ error: bad }, { status: 400 });
         const [condos, admins] = await Promise.all([
-          sr.entities.Condominium.list({ sort: "-created_date", limit: COUNT_CAP }).then(asPage),
+          sr.entities.Condominium.list("-created_date", COUNT_CAP).then(asPage),
           condoAdmins(),
         ]);
         const ownerByCondo = new Map();
@@ -115,7 +109,7 @@ export default async function (req) {
       case "tickets.list": {
         const bad = entityError(TICKET_ENTITY, params.entity);
         if (bad) return Response.json({ error: bad }, { status: 400 });
-        const tickets = asPage(await sr.entities.SupportTicket.list({ sort: "-created_date", limit: COUNT_CAP }));
+        const tickets = asPage(await sr.entities.SupportTicket.list("-created_date", COUNT_CAP));
         const users = await usersById(tickets.filter((t) => !t.created_by_email).map((t) => t.created_by_user_id));
         return Response.json({
           ok: true,
@@ -175,7 +169,7 @@ export default async function (req) {
         for (const e of usageEntities(params.entities)) {
           if (!isUsageEntity(e)) { counts[e] = null; continue; }
           try {
-            counts[e] = asPage(await sr.entities[e].list({ limit: COUNT_CAP })).length;
+            counts[e] = asPage(await sr.entities[e].list("-created_date", COUNT_CAP)).length;
           } catch {
             counts[e] = null; // entity missing or unreadable
           }
@@ -186,7 +180,7 @@ export default async function (req) {
       case "sessions.list": {
         const bad = entityError(SESSION_ENTITY, params.entity);
         if (bad) return Response.json({ error: bad }, { status: 400 });
-        const sessions = asPage(await sr.entities.Session.list({ sort: "-last_seen", limit: COUNT_CAP }));
+        const sessions = asPage(await sr.entities.Session.list("-last_seen", COUNT_CAP));
         const users = await usersById(sessions.map((s) => s.user_id));
         return Response.json({ ok: true, records: sessions.map((s) => projectSession(s, users.get(s.user_id))) });
       }
@@ -197,11 +191,22 @@ export default async function (req) {
         if (bad) return Response.json({ error: bad }, { status: 400 });
         const ids = cleanRevokeIds(params.ids);
         if (ids.length === 0) return Response.json({ error: "params.ids required" }, { status: 400 });
+        // Full record under the change, like every other Session.update in this
+        // app; a failure is reported, never swallowed into a false "revoked".
         let revoked = 0;
+        const failed = [];
         for (const id of ids) {
-          try { await sr.entities.Session.update(id, { status: "revoked" }); revoked++; } catch { /* skip missing */ }
+          const [s] = asPage(await sr.entities.Session.filter({ id }, { limit: 1 }));
+          if (!s) { failed.push(id); continue; }
+          try {
+            await sr.entities.Session.update(id, { ...s, status: "revoked" });
+            revoked++;
+          } catch (e) {
+            console.error("acaciaControl sessions.revoke failed", id, e?.message);
+            failed.push(id);
+          }
         }
-        return Response.json({ ok: true, revoked });
+        return Response.json({ ok: failed.length === 0, revoked, failed });
       }
 
       default:

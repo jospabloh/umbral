@@ -73,6 +73,9 @@ function normalizeDate(v: unknown): string | null | undefined {
 export function condominiumIdOf(u: Row | null | undefined): string {
   if (!u) return '';
   if (typeof u.condominium_id === 'string' && u.condominium_id) return u.condominium_id;
+  // Once migrated the legacy copy is never read again (same rule as auth.ts):
+  // a removed member's cleared pointer must not fall back to the old one.
+  if (u.legacy_migrated_at) return '';
   const d = u.data as Row | undefined;
   const legacy = (d && typeof d === 'object' ? (d.data && typeof d.data === 'object' ? d.data : d) : null) as Row | null;
   return typeof legacy?.condominium_id === 'string' ? legacy.condominium_id : '';
